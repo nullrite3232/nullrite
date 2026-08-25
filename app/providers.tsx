@@ -1,17 +1,48 @@
 "use client";
 
 import "@rainbow-me/rainbowkit/styles.css";
-import { RainbowKitProvider, getDefaultConfig } from "@rainbow-me/rainbowkit";
+import {
+  RainbowKitProvider,
+  getDefaultConfig,
+  getDefaultWallets,
+} from "@rainbow-me/rainbowkit";
+import {
+  metaMaskWallet,
+  coinbaseWallet,
+  rainbowWallet,
+  walletConnectWallet,
+  okxWallet,
+  phantomWallet,
+  rabbyWallet,
+  braveWallet,
+} from "@rainbow-me/rainbowkit/wallets";
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { RH_CHAIN } from "@/lib/chain";
+import { RH_CHAIN, RH_TESTNET_CHAIN } from "@/lib/chain";
+
+const { wallets } = getDefaultWallets({
+  appName: "NULL RITE",
+  projectId: process.env.NEXT_PUBLIC_WC_ID ?? "",
+  wallets: [
+    { groupName: "Recommended", wallets: [metaMaskWallet, coinbaseWallet, rainbowWallet] },
+    {
+      groupName: "Popular",
+      wallets: [
+        okxWallet,
+        phantomWallet,
+        rabbyWallet,
+        braveWallet,
+        walletConnectWallet,
+      ],
+    },
+  ],
+});
 
 const config = getDefaultConfig({
   appName: "NULL RITE",
-  // WalletConnect Cloud project id (get free at cloud.walletconnect.com).
-  // Falls back to "" so the app still builds before you set it.
   projectId: process.env.NEXT_PUBLIC_WC_ID ?? "",
-  chains: [RH_CHAIN as any],
+  chains: [RH_TESTNET_CHAIN, RH_CHAIN],
+  wallets,
   ssr: true,
 });
 

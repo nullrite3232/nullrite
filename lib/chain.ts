@@ -11,6 +11,19 @@ export const RH_CHAIN = {
   },
 } as const;
 
+// Robinhood Testnet
+export const RH_TESTNET_CHAIN = {
+  id: 46630,
+  name: "Robinhood Testnet",
+  nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://rpc.testnet.chain.robinhood.com"] },
+  },
+  blockExplorers: {
+    default: { name: "Blockscout", url: "https://explorer.testnet.chain.robinhood.com" },
+  },
+} as const;
+
 // Set after deploy (Vercel project env).
 export const CONTRACT_ADDRESS: string =
   process.env.NEXT_PUBLIC_NULLRITE_ADDRESS ?? "";
