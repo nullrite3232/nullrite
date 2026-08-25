@@ -1,0 +1,105 @@
+:root {
+  --bg: #030405;
+  --black2: #070809;
+  --panel: #0c0e12;
+  --panel2: #111419;
+  --line: #1a1d24;
+  --line2: #262a33;
+  --dim: #5a626b;
+  --dim2: #7d868a;
+  --off: #e8edf0;
+  --magenta: #ff2bd6;
+  --violet: #9b4dff;
+  --acid: #a6ff00;
+  --cyan: #2bd9ff;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--off);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(3, 4, 5, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+.wordmark {
+  font-family: "Space Mono", monospace;
+  letter-spacing: 0.18em;
+  font-size: 15px;
+}
+.wordmark b { color: var(--acid); }
+
+.main-nav { display: flex; gap: 22px; flex: 1; justify-content: center; }
+
+.nav-link {
+  font-family: "Space Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--dim2);
+  transition: color 0.2s;
+}
+.nav-link:hover { color: var(--acid); }
+
+main { min-height: 70vh; padding: 40px 28px; }
+
+.site-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 22px 28px;
+  border-top: 1px solid var(--line);
+  font-family: "Space Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: var(--dim);
+}
+
+.sec-tag {
+  font-family: "Space Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  color: var(--acid);
+  margin-bottom: 12px;
+}
+
+.h1 {
+  font-size: clamp(28px, 5vw, 56px);
+  line-height: 1.05;
+  font-weight: 800;
+  margin: 0 0 16px;
+}
+
+.p { color: var(--dim2); max-width: 560px; line-height: 1.6; }
+
+.btn {
+  font-family: "Space Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  padding: 13px 22px;
+  border: 1px solid var(--line2);
+  background: transparent;
+  color: var(--off);
+  cursor: pointer;
+  transition: 0.2s;
+}
+.btn:hover { border-color: var(--acid); color: var(--acid); }
+.btn-primary { border-color: var(--acid); color: var(--acid); }
+.btn-primary:hover { background: var(--acid); color: #030405; }
