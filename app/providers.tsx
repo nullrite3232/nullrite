@@ -4,7 +4,6 @@ import "@rainbow-me/rainbowkit/styles.css";
 import {
   RainbowKitProvider,
   getDefaultConfig,
-  getDefaultWallets,
 } from "@rainbow-me/rainbowkit";
 import {
   metaMaskWallet,
@@ -20,11 +19,15 @@ import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RH_CHAIN, RH_TESTNET_CHAIN } from "@/lib/chain";
 
-const { wallets } = getDefaultWallets({
+const config = getDefaultConfig({
   appName: "NULL RITE",
   projectId: process.env.NEXT_PUBLIC_WC_ID ?? "",
+  chains: [RH_TESTNET_CHAIN, RH_CHAIN],
   wallets: [
-    { groupName: "Recommended", wallets: [metaMaskWallet, coinbaseWallet, rainbowWallet] },
+    {
+      groupName: "Recommended",
+      wallets: [metaMaskWallet, coinbaseWallet, rainbowWallet],
+    },
     {
       groupName: "Popular",
       wallets: [
@@ -36,13 +39,6 @@ const { wallets } = getDefaultWallets({
       ],
     },
   ],
-});
-
-const config = getDefaultConfig({
-  appName: "NULL RITE",
-  projectId: process.env.NEXT_PUBLIC_WC_ID ?? "",
-  chains: [RH_TESTNET_CHAIN, RH_CHAIN],
-  wallets,
   ssr: true,
 });
 

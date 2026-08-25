@@ -6,13 +6,15 @@ export const SITE = {
   name: "NULL RITE",
   domain: "nullrite.xyz", // §23
   chainName: "Robinhood Chain",
+  chainId: 4663,
+  testnetChainId: 46630,
   supply: 3232, // §27 TOTAL SUPPLY
   maxMintPerWallet: 10, // §27
   mintCurrency: "ETH", // §27
   mintPriceEth: 0.01, // §27 — PLACEHOLDER (not locked)
   mintPriceLocked: false, // spec: placeholder unless explicitly confirmed
-  contractAddress: "", // TBA §28
-};
+  contractAddress: "0xd3E85fe5D282e1bc49F4A6B189272Ec874D29500", // Vessel NFT
+} as const;
 
 // V1 live vs sealed states (§24, §27)
 export const STATE = {
@@ -20,7 +22,7 @@ export const STATE = {
   gate: "SEALED", // §19 current V1
   rite: "DORMANT", // $RITE §6
   gateComing: "RESONANCE", // coming state §26
-};
+} as const;
 
 // Locked terminology (§26)
 export const TERMS = {
@@ -37,11 +39,16 @@ export const TERMS = {
   gate: "THE GATE",
   history: "THE RECORD",
   early: "THE CALLING",
-};
+} as const;
 
 export const SOCIALS = {
-  x: "", // TBA §28
-  discord: "", // TBA §28
-  docs: "",
-  contract: "", // when deployed
-};
+  x: "https://x.com/nullrite3232",
+  discord: "https://discord.gg/nullrite",
+  docs: "https://docs.nullrite.xyz",
+  contract: "https://testnet.blockscout.robinhood.com/address/0xd3E85fe5D282e1bc49F4A6B189272Ec874D29500",
+} as const;
+
+export const IPFS = {
+  gateway: "https://gateway.lighthouse.storage/ipfs/",
+  collectionCID: "QmXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", // TODO: replace with actual CID after upload
+} as const;

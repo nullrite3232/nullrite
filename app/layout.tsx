@@ -1,46 +1,23 @@
-import "@rainbow-me/rainbowkit/styles.css";
 import "./globals.css";
 import { Providers } from "./providers";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import Link from "next/link";
+import { Layout } from "@/components/layout/Layout";
 
 export const metadata = {
   title: "NULL RITE — 3,232 Vessels",
   description: "A dark cosmic ritual on Robinhood Chain. 3,232 Vessels will answer.",
+  openGraph: {
+    title: "NULL RITE — 3,232 Vessels",
+    description: "A dark cosmic ritual on Robinhood Chain. 3,232 Vessels will answer.",
+    type: "website",
+  },
 };
-
-const NAV = [
-  { href: "/", label: "HOME" },
-  { href: "/mint", label: "MINT" },
-  { href: "/collection", label: "COLLECTION" },
-  { href: "/gate", label: "GATE" },
-  { href: "/docs", label: "DOCS" },
-  { href: "/verify", label: "VERIFY" },
-];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" className="scroll-smooth">
+      <body className="min-h-screen bg-bg text-off antialiased">
         <Providers>
-          <header className="site-header">
-            <Link href="/" className="wordmark">
-              NULL <b>RITE</b>
-            </Link>
-            <nav className="main-nav">
-              {NAV.map((n) => (
-                <Link key={n.href} href={n.href} className="nav-link">
-                  {n.label}
-                </Link>
-              ))}
-            </nav>
-            <ConnectButton />
-          </header>
-          <main>{children}</main>
-          <footer className="site-footer">
-            <span>NULL RITE // 3,232 VESSELS</span>
-            <span>ROBINHOOD CHAIN // V1 WEB CONCEPT</span>
-          </footer>
+          <Layout>{children}</Layout>
         </Providers>
       </body>
     </html>

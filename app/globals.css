@@ -1,3 +1,9 @@
+@import "@rainbow-me/rainbowkit/styles.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --bg: #030405;
   --black2: #070809;
@@ -8,37 +14,51 @@
   --dim: #5a626b;
   --dim2: #7d868a;
   --off: #e8edf0;
-  --magenta: #ff2bd6;
-  --violet: #9b4dff;
   --acid: #a6ff00;
+  --acid-dim: #85cc00;
+  --violet: #9b4dff;
   --cyan: #2bd9ff;
+  --magenta: #ff2bd6;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body {
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
   margin: 0;
   padding: 0;
   background: var(--bg);
   color: var(--off);
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  line-height: 1.6;
 }
 
-a { color: inherit; text-decoration: none; }
-
-.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 16px 28px;
-  border-bottom: 1px solid var(--line);
-  background: rgba(3, 4, 5, 0.85);
-  backdrop-filter: blur(8px);
+@font-face {
+  font-family: "Space Mono";
+  src: local("Space Mono"), local("SpaceMono-Regular");
+  font-display: swap;
 }
 
 .wordmark {
@@ -48,28 +68,19 @@ a { color: inherit; text-decoration: none; }
 }
 .wordmark b { color: var(--acid); }
 
-.main-nav { display: flex; gap: 22px; flex: 1; justify-content: center; }
-
 .nav-link {
   font-family: "Space Mono", monospace;
   font-size: 11px;
   letter-spacing: 0.2em;
   color: var(--dim2);
-  transition: color 0.2s;
+  transition: color 0.2s ease;
 }
 .nav-link:hover { color: var(--acid); }
-
-main { min-height: 70vh; padding: 40px 28px; }
-
-.site-footer {
-  display: flex;
-  justify-content: space-between;
-  padding: 22px 28px;
-  border-top: 1px solid var(--line);
-  font-family: "Space Mono", monospace;
-  font-size: 10px;
-  letter-spacing: 0.15em;
-  color: var(--dim);
+.nav-link:focus-visible {
+  outline: none;
+  color: var(--acid);
+  box-shadow: 0 0 0 2px var(--acid), 0 0 0 4px var(--bg);
+  border-radius: 4px;
 }
 
 .sec-tag {
@@ -78,16 +89,52 @@ main { min-height: 70vh; padding: 40px 28px; }
   letter-spacing: 0.25em;
   color: var(--acid);
   margin-bottom: 12px;
+  text-transform: uppercase;
 }
 
 .h1 {
-  font-size: clamp(28px, 5vw, 56px);
+  font-size: clamp(32px, 6vw, 72px);
   line-height: 1.05;
   font-weight: 800;
   margin: 0 0 16px;
+  letter-spacing: -0.02em;
 }
 
-.p { color: var(--dim2); max-width: 560px; line-height: 1.6; }
+.h2 {
+  font-size: clamp(24px, 4vw, 48px);
+  line-height: 1.1;
+  font-weight: 700;
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
+}
+
+.h3 {
+  font-size: clamp(20px, 3vw, 32px);
+  line-height: 1.2;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.p {
+  color: var(--dim2);
+  max-width: 560px;
+  line-height: 1.7;
+}
+
+.p-lg {
+  font-size: clamp(16px, 2vw, 20px);
+  line-height: 1.8;
+}
+
+.mono {
+  font-family: "Space Mono", monospace;
+}
+
+.mono-sm {
+  font-family: "Space Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+}
 
 .btn {
   font-family: "Space Mono", monospace;
@@ -98,8 +145,85 @@ main { min-height: 70vh; padding: 40px 28px; }
   background: transparent;
   color: var(--off);
   cursor: pointer;
-  transition: 0.2s;
+  transition: all 0.2s ease;
+  border-radius: 8px;
 }
 .btn:hover { border-color: var(--acid); color: var(--acid); }
 .btn-primary { border-color: var(--acid); color: var(--acid); }
-.btn-primary:hover { background: var(--acid); color: #030405; }
+.btn-primary:hover { background: var(--acid); color: var(--bg); }
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--acid), 0 0 0 4px var(--bg);
+}
+
+::selection {
+  background: var(--acid);
+  color: var(--bg);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--dim); }
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: var(--panel);
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+  padding: 12px 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--acid);
+  box-shadow: 0 0 0 3px var(--acid)/20;
+}
+input::placeholder, textarea::placeholder { color: var(--dim); }
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .bg-gradient-radial { background: radial-gradient(ellipse at center, var(--panel2) 0%, var(--bg) 70%); }
+  .bg-gradient-conic { background: conic-gradient(from 0deg at 50% 50%, var(--acid)/10, var(--violet)/10, var(--acid)/10); }
+  .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+  .animate-slide-up { animation: slideUp 0.6s ease-out forwards; }
+  .animate-scale-in { animation: scaleIn 0.4s ease-out forwards; }
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px var(--acid)/20; }
+  50% { box-shadow: 0 0 40px var(--acid)/40, 0 0 60px var(--acid)/20; }
+}
+
+.glow-acid {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+@media (max-width: 768px) {
+  .h1 { font-size: clamp(28px, 8vw, 48px); }
+  .h2 { font-size: clamp(22px, 6vw, 36px); }
+  .sec-tag { font-size: 10px; letter-spacing: 0.2em; }
+  .nav-link { font-size: 10px; letter-spacing: 0.15em; }
+}
