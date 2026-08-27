@@ -5,11 +5,13 @@ import { IntroGate } from "@/components/IntroGate";
 import { useRitual } from "@/components/RitualContext";
 import { RoutePages } from "@/components/RoutePages";
 import { RouteRouter } from "@/components/RouteRouter";
-import { ASSETS } from "@/lib/siteConfig";
+import { ASSETS, SITE } from "@/lib/siteConfig";
+import { useAssemblySupply } from "@/lib/useAssemblySupply";
 
 export default function Home() {
   const { open } = useRitual();
   const [siteVisible, setSiteVisible] = useState(false);
+  const { minted, progress } = useAssemblySupply();
 
   const openDocs = () => {
     const link = document.querySelector<HTMLElement>(
@@ -75,10 +77,12 @@ export default function Home() {
               <div className="gate-status">
                 <div className="gate-status-row">
                   <span>The Assembly</span>
-                  <span>TESTNET</span>
+                  <span>
+                    {minted === null ? "—" : minted.toLocaleString()} / {SITE.supply.toLocaleString()}
+                  </span>
                 </div>
                 <div className="progress">
-                  <i />
+                  <i style={{ width: `${progress}%` }} />
                 </div>
               </div>
             </div>
@@ -162,7 +166,7 @@ export default function Home() {
           <section className="section" id="rite">
             <div className="rite-grid">
               <div className="rite-core">
-                <img src={ASSETS.riteCore} alt="$RITE — the Rite Core" />
+                <img className="rite-core-image" src={ASSETS.riteCore} alt="$RITE — the Rite Core" />
               </div>
               <div className="rite-copy">
                 <div className="eyebrow">$RITE // RITUAL FUEL // SEALED</div>
@@ -223,18 +227,9 @@ export default function Home() {
                   collection.
                 </p>
                 <div className="record-lines">
-                  <div>
-                    <span>VESSEL_ID</span>
-                    <span>SEALED</span>
-                  </div>
-                  <div>
-                    <span>RARITY</span>
-                    <span>WITHHELD</span>
-                  </div>
-                  <div>
-                    <span>TRAITS</span>
-                    <span>WITHHELD</span>
-                  </div>
+                  <div><span>VESSEL_ID</span><span>SEALED</span></div>
+                  <div><span>RARITY</span><span>WITHHELD</span></div>
+                  <div><span>TRAITS</span><span>WITHHELD</span></div>
                 </div>
               </div>
               <div className="panel" id="gate-teaser">
@@ -245,18 +240,9 @@ export default function Home() {
                   can permanently affect what future Gates show that Vessel.
                 </p>
                 <div className="record-lines">
-                  <div>
-                    <span>GATE_I</span>
-                    <span>NOT OPENED</span>
-                  </div>
-                  <div>
-                    <span>GATE_II</span>
-                    <span>UNDEFINED</span>
-                  </div>
-                  <div>
-                    <span>CLASS</span>
-                    <span>UNDEFINED</span>
-                  </div>
+                  <div><span>GATE_I</span><span>NOT OPENED</span></div>
+                  <div><span>GATE_II</span><span>UNDEFINED</span></div>
+                  <div><span>CLASS</span><span>UNDEFINED</span></div>
                 </div>
               </div>
             </div>
