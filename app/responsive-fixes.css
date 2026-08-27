@@ -1,0 +1,527 @@
+/* NULL RITE production responsive hardening.
+   Loaded after globals.css so these rules intentionally override the v15 prototype. */
+
+.header-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  position:relative;
+  z-index:3;
+}
+.nav-toggle{
+  display:none;
+  width:38px;
+  height:38px;
+  border:1px solid var(--line);
+  background:rgba(3,4,5,.82);
+  padding:0;
+  place-items:center;
+  position:relative;
+}
+.nav-toggle span{
+  position:absolute;
+  width:16px;
+  height:1px;
+  background:#dfe3e5;
+  transition:transform .22s ease, top .22s ease;
+}
+.nav-toggle span:first-child{top:15px}
+.nav-toggle span:last-child{top:21px}
+.nav-toggle.open span:first-child{top:18px;transform:rotate(45deg)}
+.nav-toggle.open span:last-child{top:18px;transform:rotate(-45deg)}
+
+/* Prevent large media from forcing the $RITE text column off-screen. */
+.rite-grid > *,
+.hero > *,
+.section-head > *,
+.collection-head > *{
+  min-width:0;
+}
+.rite-core{
+  overflow:hidden;
+}
+.rite-core-image,
+.rite-core > img{
+  width:min(42vw,500px);
+  max-width:100%;
+  height:auto;
+  display:block;
+  object-fit:contain;
+  filter:brightness(.82) contrast(1.05) saturate(.92);
+  opacity:.96;
+  mix-blend-mode:screen;
+  -webkit-mask-image:radial-gradient(circle at center,#000 58%,rgba(0,0,0,.96) 72%,transparent 96%);
+  mask-image:radial-gradient(circle at center,#000 58%,rgba(0,0,0,.96) 72%,transparent 96%);
+  animation:riteFloat 8s ease-in-out infinite;
+}
+.rite-copy{
+  min-width:0;
+  overflow:hidden;
+}
+.rite-copy h2,
+.rite-copy p,
+.rite-points{
+  max-width:100%;
+}
+.rite-copy h2{
+  overflow-wrap:normal;
+  word-break:normal;
+}
+
+/* Live Assembly progress animates cleanly when totalSupply changes. */
+.progress i{
+  transition:width .55s ease;
+}
+
+@media(max-width:980px){
+  header{
+    padding:0 20px;
+  }
+  .nav-toggle{display:grid}
+  .main-nav{
+    display:none;
+    position:absolute;
+    left:0;
+    right:0;
+    top:72px;
+    z-index:40;
+    padding:18px 20px 22px;
+    background:rgba(3,4,5,.97);
+    border-bottom:1px solid var(--line);
+    backdrop-filter:blur(18px);
+    flex-direction:column;
+    align-items:stretch;
+    gap:0;
+  }
+  .main-nav.mobile-open{display:flex}
+  .main-nav a{
+    display:block;
+    padding:14px 2px;
+    border-bottom:1px solid rgba(255,255,255,.06);
+    font-size:9px;
+    letter-spacing:.22em;
+  }
+  .main-nav a:last-child{border-bottom:0}
+
+  .hero{
+    grid-template-columns:1fr;
+    gap:18px;
+    text-align:center;
+  }
+  .hero-copy{
+    width:min(100%,720px);
+    margin:0 auto;
+  }
+  .hero-gate{
+    order:-1;
+  }
+  .lead{
+    margin-left:auto;
+    margin-right:auto;
+  }
+  .section-head,
+  .rite-grid{
+    grid-template-columns:1fr;
+  }
+  .rite-grid{
+    gap:24px;
+  }
+  .rite-core{
+    min-height:430px;
+  }
+  .rite-core-image,
+  .rite-core > img{
+    width:min(72vw,480px);
+  }
+  .rite-copy{
+    width:min(100%,760px);
+  }
+}
+
+@media(max-width:760px){
+  body{
+    width:100%;
+    overflow-x:hidden;
+  }
+  header{
+    height:62px;
+    padding:0 14px;
+    gap:10px;
+  }
+  header .wordmark{
+    font-size:10px;
+    letter-spacing:.25em;
+  }
+  .header-actions{
+    gap:7px;
+  }
+  .wallet{
+    padding:9px 10px;
+    font-size:7px;
+    letter-spacing:.12em;
+    white-space:nowrap;
+  }
+  .nav-toggle{
+    width:36px;
+    height:36px;
+  }
+  .main-nav{
+    top:62px;
+    padding:12px 16px 18px;
+  }
+
+  .hero{
+    min-height:auto;
+    padding:24px 18px 66px;
+    gap:10px;
+  }
+  .hero-gate{
+    min-height:360px;
+    width:100%;
+  }
+  .gate-window{
+    width:min(82vw,350px);
+  }
+  .gate-orbit{
+    width:min(88vw,380px);
+  }
+  .gate-status{
+    bottom:0;
+    width:min(92%,420px);
+  }
+  .hero h1{
+    font-size:clamp(44px,15vw,72px);
+    line-height:.88;
+  }
+  .hero h1 .small{
+    margin-top:12px;
+  }
+  .lead{
+    font-size:13px;
+    line-height:1.65;
+    margin-top:22px;
+  }
+  .actions{
+    margin-top:24px;
+  }
+  .meta{
+    margin-top:34px;
+    gap:8px;
+    width:100%;
+  }
+  .meta strong{
+    font-size:16px;
+  }
+  .meta span{
+    font-size:6px;
+    letter-spacing:.14em;
+  }
+
+  .section{
+    padding:70px 18px;
+  }
+  .section-head{
+    gap:24px;
+    margin-bottom:34px;
+  }
+  .section-head p{
+    justify-self:start;
+    font-size:12.5px;
+  }
+  .section h2,
+  .reveal-copy h2{
+    font-size:clamp(38px,12vw,58px);
+    line-height:.94;
+  }
+  .flow{
+    grid-template-columns:1fr;
+  }
+  .step{
+    min-height:190px;
+  }
+  .step h3{
+    margin-top:58px;
+  }
+
+  .reveal,
+  .reveal-copy{
+    min-height:620px;
+  }
+  .reveal-copy{
+    width:100%;
+    padding:44px 18px;
+    justify-content:flex-end;
+  }
+  .reveal-copy p{
+    font-size:13px;
+  }
+
+  .rite-grid{
+    gap:14px;
+  }
+  .rite-core{
+    min-height:330px;
+  }
+  .rite-core-image,
+  .rite-core > img{
+    width:min(88vw,380px);
+  }
+  .rite-copy h2{
+    font-size:clamp(38px,12vw,58px);
+    line-height:.95;
+  }
+  .rite-copy p{
+    font-size:13px;
+  }
+  .rp{
+    gap:16px;
+  }
+
+  .duo{
+    grid-template-columns:1fr;
+  }
+  .panel{
+    min-height:360px;
+    padding:22px;
+  }
+  .panel .eyebrow{
+    margin-bottom:58px;
+  }
+
+  .final{
+    min-height:58vh;
+  }
+  .final h2{
+    font-size:clamp(38px,12vw,58px);
+  }
+  .footer{
+    padding:22px 18px;
+    gap:10px;
+  }
+
+  /* Route pages use the actual mobile header height. */
+  .route-page{
+    top:62px;
+  }
+  .route-page::before{
+    inset:62px 0 0;
+  }
+  .route-inner,
+  .gate-page-inner,
+  .gate-page-stage{
+    min-height:calc(100vh - 62px);
+  }
+  .route-inner{
+    padding:36px 18px 64px;
+  }
+  .route-topline{
+    margin-bottom:42px;
+  }
+  .route-title{
+    font-size:clamp(46px,15vw,78px);
+    line-height:.88;
+  }
+  .collection-state{
+    width:100%;
+    justify-self:stretch;
+  }
+  .docs-layout{
+    gap:36px;
+  }
+  .gate-page-copy{
+    width:calc(100% - 32px);
+  }
+  .gate-page-copy h2{
+    font-size:clamp(48px,15vw,76px);
+  }
+
+  /* Fullscreen Summoning becomes a natural vertical mobile sheet, no clipped internal scroll. */
+  .ritual-overlay{
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .ritual-shell{
+    position:relative;
+    inset:auto;
+    display:block;
+    min-height:100%;
+    padding:8px;
+  }
+  .ritual-panel{
+    width:min(100%,430px);
+    min-height:0;
+    margin:8px auto;
+    overflow:hidden;
+  }
+  .ritual-view{
+    min-height:0;
+  }
+  .ritual-config,
+  .ritual-success{
+    grid-template-columns:1fr;
+  }
+  .ritual-topbar{
+    height:52px;
+    padding:0 12px;
+  }
+  .ritual-visual,
+  .success-visual{
+    border-right:0;
+    border-bottom:1px solid rgba(255,255,255,.06);
+    padding:54px 12px 8px;
+  }
+  .ritual-visual img,
+  .success-visual img{
+    width:min(48vw,170px);
+  }
+  .ritual-copy,
+  .success-copy{
+    padding:62px 14px 16px;
+  }
+  .ritual-copy h2,
+  .success-copy h2,
+  .await-head{
+    font-size:clamp(30px,10vw,44px);
+  }
+  .ritual-copy p,
+  .success-copy p,
+  .await-copy{
+    font-size:12px;
+    line-height:1.58;
+  }
+  .ritual-qty-wrap{
+    margin-top:8px;
+    padding:12px 0;
+  }
+  .summon-counter{
+    grid-template-columns:48px minmax(0,1fr) 48px;
+    gap:9px;
+    width:100%;
+  }
+  .counter-btn{
+    height:50px;
+  }
+  .counter-center{
+    height:62px;
+  }
+  .counter-meta{
+    width:100%;
+    font-size:5.5px;
+  }
+  .ritual-row{
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:10px;
+    padding:9px 0;
+  }
+  .ritual-row span:last-child{
+    max-width:58vw;
+    text-align:right;
+    overflow-wrap:anywhere;
+  }
+  .ritual-actions,
+  .success-actions{
+    flex-direction:column;
+  }
+  .ritual-await{
+    padding:72px 14px 24px;
+  }
+  .await-art{
+    width:min(58vw,220px);
+    margin-bottom:20px;
+  }
+  .await-status{
+    margin-top:20px;
+  }
+  .await-status div{
+    font-size:6px;
+    letter-spacing:.12em;
+    gap:12px;
+  }
+}
+
+@media(max-width:480px){
+  header .wordmark{
+    font-size:9px;
+    letter-spacing:.20em;
+  }
+  .wallet{
+    max-width:132px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .hero{
+    padding-left:14px;
+    padding-right:14px;
+  }
+  .hero-gate{
+    min-height:320px;
+  }
+  .gate-window{
+    width:min(86vw,310px);
+  }
+  .gate-orbit{
+    width:min(92vw,335px);
+  }
+  .gate-status{
+    padding:12px;
+  }
+  .gate-status-row{
+    font-size:6px;
+    letter-spacing:.12em;
+  }
+  .hero h1{
+    font-size:clamp(40px,14vw,58px);
+  }
+  .section{
+    padding-left:14px;
+    padding-right:14px;
+  }
+  .meta{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  .meta strong{
+    font-size:14px;
+  }
+  .rp{
+    flex-direction:column;
+    gap:6px;
+  }
+  .rp span:last-child{
+    text-align:left;
+  }
+  .sealed-grid{
+    grid-template-columns:1fr;
+  }
+  .docs-index{
+    grid-template-columns:1fr 1fr;
+  }
+  .route-topline{
+    flex-direction:column;
+    gap:12px;
+  }
+  .gate-lock{
+    grid-template-columns:1fr;
+  }
+  .gate-lock div+div{
+    border-left:0;
+    border-top:1px solid rgba(255,255,255,.10);
+  }
+  .ritual-shell{
+    padding:4px;
+  }
+  .ritual-panel{
+    margin:4px auto;
+  }
+  .ritual-visual img,
+  .success-visual img{
+    width:min(52vw,150px);
+  }
+  .ritual-copy,
+  .success-copy{
+    padding-left:12px;
+    padding-right:12px;
+  }
+  .summon-counter{
+    grid-template-columns:44px minmax(0,1fr) 44px;
+  }
+}
