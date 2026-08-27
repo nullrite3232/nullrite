@@ -30,7 +30,7 @@ export default function Home() {
             <div className="hero-copy">
               <div className="eyebrow">THE ASSEMBLY // PRE-REVEAL</div>
               <h1>
-                3,232 VESSELS<span className="small">WILL ANSWER.</span>
+                3232 VESSELS<span className="small">WILL ANSWER.</span>
               </h1>
               <p className="lead">
                 The forms remain hidden. Every Vessel enters NULL RITE with an
@@ -46,7 +46,7 @@ export default function Home() {
               </div>
               <div className="meta">
                 <div>
-                  <strong>3,232</strong>
+                  <strong>3232</strong>
                   <span>Total Supply</span>
                 </div>
                 <div>
@@ -76,7 +76,7 @@ export default function Home() {
                 <div className="gate-status-row">
                   <span>The Assembly</span>
                   <span>
-                    {minted === null ? "—" : minted.toLocaleString()} / {SITE.supply.toLocaleString()}
+                    {minted === null ? "—" : minted} / {SITE.supply}
                   </span>
                 </div>
                 <div className="progress">
@@ -136,7 +136,7 @@ export default function Home() {
               </div>
               <div className="step">
                 <div className="n">02 / SUMMON</div>
-                <h3>3,232 Answer</h3>
+                <h3>3232 Answer</h3>
                 <p>
                   Vessels mint through the NULL RITE site using ETH. Their final
                   forms remain sealed.
@@ -267,7 +267,7 @@ export default function Home() {
         </main>
 
         <footer className="footer">
-          <span>NULL RITE // 3,232 VESSELS</span>
+          <span>NULL RITE // 3232 VESSELS</span>
           <span>ROBINHOOD CHAIN // V1</span>
         </footer>
       </div>

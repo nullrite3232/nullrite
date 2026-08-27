@@ -89,7 +89,7 @@ export function RoutePages() {
                 </div>
                 <h2>NULL RITE</h2>
                 <p>
-                  NULL RITE is a collection of 3,232 Vessels on Robinhood Chain.
+                  NULL RITE is a collection of 3232 Vessels on Robinhood Chain.
                   The launch unfolds as a sequence: $RITE awakens, Vessels are
                   summoned, identities are revealed, and only then does the Gate
                   begin to write persistent history.
@@ -101,7 +101,7 @@ export function RoutePages() {
                 <div className="docs-spec">
                   <div className="ritual-row">
                     <span>Collection</span>
-                    <span>3,232 VESSELS</span>
+                    <span>3232 VESSELS</span>
                   </div>
                   <div className="ritual-row">
                     <span>Network</span>

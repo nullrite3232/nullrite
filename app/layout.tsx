@@ -5,11 +5,11 @@ import { Providers } from "./providers";
 import { Layout } from "@/components/layout/Layout";
 
 export const metadata = {
-  title: "NULL RITE — 3,232 Vessels",
-  description: "A dark cosmic ritual on Robinhood Chain. 3,232 Vessels will answer.",
+  title: "NULL RITE — 3232 Vessels",
+  description: "A dark cosmic ritual on Robinhood Chain. 3232 Vessels will answer.",
   openGraph: {
-    title: "NULL RITE — 3,232 Vessels",
-    description: "A dark cosmic ritual on Robinhood Chain. 3,232 Vessels will answer.",
+    title: "NULL RITE — 3232 Vessels",
+    description: "A dark cosmic ritual on Robinhood Chain. 3232 Vessels will answer.",
     type: "website",
   },
 };

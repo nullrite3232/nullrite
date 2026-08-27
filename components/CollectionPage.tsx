@@ -265,7 +265,7 @@ export function CollectionPage() {
             <div className="eyebrow">THE ASSEMBLY</div>
             <h1 className="route-title">THE ASSEMBLY</h1>
             <div className="collection-live-count">
-              <strong>{minted === null ? "—" : mintedCount.toLocaleString()} / {SITE.supply.toLocaleString()}</strong>
+              <strong>{minted === null ? "—" : mintedCount} / {SITE.supply}</strong>
               <span>{mintedCount === 1 ? "VESSEL HAS ANSWERED." : "VESSELS HAVE ANSWERED."}</span>
             </div>
             <p className="route-sub">
@@ -278,7 +278,7 @@ export function CollectionPage() {
           <div className="collection-meter">
             <div className="collection-meter-top">
               <span>Assembly Progress</span>
-              <strong>{minted === null ? "—" : `${mintedCount.toLocaleString()} / ${SITE.supply.toLocaleString()}`}</strong>
+              <strong>{minted === null ? "—" : `${mintedCount} / ${SITE.supply}`}</strong>
             </div>
             <div className="progress collection-progress">
               <i style={{ width: `${progress}%` }} />
@@ -300,7 +300,7 @@ export function CollectionPage() {
               onClick={() => setMode("all")}
             >
               All Vessels
-              <span>{minted === null ? "—" : mintedCount.toLocaleString()}</span>
+              <span>{minted === null ? "—" : mintedCount}</span>
             </button>
             <button
               className={`collection-tab ${mode === "mine" ? "active" : ""}`}
@@ -310,7 +310,7 @@ export function CollectionPage() {
               onClick={() => setMode("mine")}
             >
               My Vessels
-              <span>{!isConnected ? "—" : loadingMy ? "…" : myIds.length.toLocaleString()}</span>
+              <span>{!isConnected ? "—" : loadingMy ? "…" : myIds.length}</span>
             </button>
           </div>
           <div className="collection-mode-status">{statusText}</div>

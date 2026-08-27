@@ -262,7 +262,7 @@ export function RitualOverlay({
                 <div className="ritual-row"><span>Reveal State</span><span>SEALED</span></div>
                 <div className="ritual-row">
                   <span>Vessels Summoned</span>
-                  <span>{minted === null ? "—" : minted.toLocaleString()} / {SITE.supply.toLocaleString()}</span>
+                  <span>{minted === null ? "—" : minted} / {SITE.supply}</span>
                 </div>
               </div>
 
@@ -319,7 +319,7 @@ export function RitualOverlay({
                   <span>{ids.length > 1 ? "Vessel IDs" : "Vessel ID"}</span>
                   <span id="successIds">{ids.length > 0 ? ids.map((id) => <span key={id} style={{ display: "block" }}>{id}</span>) : "CONFIRMED ONCHAIN"}</span>
                 </div>
-                <div className="ritual-row"><span>Assembly</span><span>{minted === null ? "—" : minted.toLocaleString()} / {SITE.supply.toLocaleString()}</span></div>
+                <div className="ritual-row"><span>Assembly</span><span>{minted === null ? "—" : minted} / {SITE.supply}</span></div>
                 <div className="ritual-row"><span>Reveal State</span><span>SEALED</span></div>
                 <div className="ritual-row"><span>Network</span><span>Robinhood Chain</span></div>
                 <div className="ritual-row"><span>Gate State</span><span>SEALED</span></div>

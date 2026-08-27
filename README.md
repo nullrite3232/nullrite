@@ -29,7 +29,7 @@ The GitHub repository name is intentionally **nullrite**.
 
 ## Current testnet state
 
-- Supply concept: 3,232 VESSELS
+- Supply concept: 3232 VESSELS
 - Reveal: SEALED
 - Gate: SEALED
 - $RITE: SEALED
