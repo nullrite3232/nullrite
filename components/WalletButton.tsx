@@ -1,24 +1,30 @@
 "use client";
 
-import { useAccount, useDisconnect } from "wagmi";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { useAppKit } from "@reown/appkit/react";
+import { useAccount } from "wagmi";
 
 export function WalletButton() {
   const { address, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
-  const { openConnectModal } = useConnectModal() ?? {};
+  const { open } = useAppKit();
 
   if (isConnected && address) {
     const short = `${address.slice(0, 6)}…${address.slice(-4)}`;
     return (
-      <button className="wallet" onClick={() => disconnect()} title="Disconnect">
+      <button
+        className="wallet"
+        onClick={() => open({ view: "Account" })}
+        title="Wallet account"
+      >
         {short}
       </button>
     );
   }
 
   return (
-    <button className="wallet" onClick={() => openConnectModal?.()}>
+    <button
+      className="wallet"
+      onClick={() => open({ view: "Connect", namespace: "eip155" })}
+    >
       Connect Wallet
     </button>
   );

@@ -1,8 +1,8 @@
 # NULL RITE — Web
 
-Next.js 14 + TypeScript + wagmi/viem/RainbowKit for the NULL RITE website.
+Next.js 14 + TypeScript + wagmi/viem + Reown AppKit for the NULL RITE website.
 
-Current phase: **Robinhood Testnet / pre-reveal / Gate sealed**.
+Current public phase: **pre-launch / Public Summoning sealed / Reveal sealed / Gate sealed**.
 
 ## Repository
 
@@ -20,41 +20,52 @@ The GitHub repository name is intentionally **nullrite**.
 
 - Next.js 14 (App Router)
 - TypeScript
-- wagmi
-- viem
-- RainbowKit
-- Robinhood Testnet for the current Summoning test flow
+- wagmi + viem
+- Reown AppKit + Wagmi adapter
+- TanStack Query
+- Robinhood Chain as the public wallet network
 - Cloudinary for website media delivery
 - Vercel for deployment
 
-## Current testnet state
+## Public launch state
 
 - Supply concept: 3232 VESSELS
+- Public Summoning: SEALED
 - Reveal: SEALED
 - Gate: SEALED
 - $RITE: SEALED
-- Current mint network: Robinhood Testnet (`46630`)
-- Current testnet contract limits:
-  - max 5 Vessels per transaction
-  - max 10 Vessels per wallet
-- Current testnet mint price is configured in `lib/siteConfig.ts`
+- Public wallet context: Robinhood Chain mainnet
+- Development mint plumbing remains in the codebase but is not exposed by the public pre-launch UI.
 
-## Summoning flow
+## Wallet connection
 
-The testnet mint interface now uses the real wallet/chain state:
+The public wallet layer uses Reown AppKit rather than the legacy RainbowKit modal.
 
 ```text
-Configure quantity
-→ Connect wallet if needed
-→ Switch to Robinhood Testnet if needed
-→ Wallet signature
-→ Transaction submitted
-→ Wait for receipt
-→ Parse real ERC721 Transfer logs
-→ Show confirmed Vessel token IDs when available
+Connect Wallet
+→ Reown AppKit EVM wallet picker
+→ injected wallet / mobile wallet handoff / WalletConnect
+→ wallet session restored on return when supported
+→ no forced network switch during pre-launch connection
 ```
 
-Prototype `Simulate Rejected`, `Signature Accepted`, and `Simulate Confirmed` controls are not part of the hardened testnet flow.
+OKX, MetaMask and other EIP-6963 compatible injected wallets are discovered by the modern wallet layer. Mobile WalletConnect handoff requires a valid Reown Cloud Project ID.
+
+### Required Vercel variable
+
+Create an AppKit project in Reown Dashboard and set:
+
+```text
+NEXT_PUBLIC_REOWN_PROJECT_ID=<real Reown Project ID>
+```
+
+During migration the application will also accept a valid legacy:
+
+```text
+NEXT_PUBLIC_WC_ID=<project ID>
+```
+
+The committed placeholder is not a functional production Project ID. Add the production value in Vercel Project Settings → Environment Variables. Configure the Reown project for the domains that will host NULL RITE, including the current Vercel domain during testing and `nullrite.xyz` before custom-domain launch.
 
 ## Local development
 
@@ -71,19 +82,15 @@ npm run build
 
 ## Environment variables
 
-Use Vercel Project Settings → Environment Variables for deployment values.
-
-Example variables:
+Public environment variables can include:
 
 ```text
-NEXT_PUBLIC_WC_ID
+NEXT_PUBLIC_REOWN_PROJECT_ID
 NEXT_PUBLIC_NULLRITE_ADDRESS
 NEXT_PUBLIC_IPFS_GATEWAY
 ```
 
 Do not store private keys, seed phrases, or server-side secrets in `NEXT_PUBLIC_*` variables because they are exposed to the browser.
-
-The current testnet contract remains configured in `lib/siteConfig.ts` while the UI is being finalized. Mainnet migration should happen only after the testnet interface is approved.
 
 ## Current routes
 
@@ -99,7 +106,7 @@ These can later be migrated to dedicated Next.js routes without redesigning the 
 
 ## Media
 
-Website media is delivered externally through Cloudinary rather than embedded Base64 assets. URLs are centralized in:
+Website media is delivered through Cloudinary. URLs are centralized in:
 
 ```text
 lib/siteConfig.ts
@@ -109,8 +116,8 @@ lib/siteConfig.ts
 
 The following are future phases and should not be treated as live functionality yet:
 
-- mainnet Vessel mint
-- final production contract address
+- mainnet Vessel mint opening
+- final production Vessel contract address
 - reveal metadata switch
 - final IPFS collection CID
 - live $RITE token actions
@@ -119,4 +126,4 @@ The following are future phases and should not be treated as live functionality 
 
 ## Launch rule
 
-Do not switch the site from Robinhood Testnet to Robinhood Chain mainnet until the testnet UI, wallet flow, contract parameters, reveal flow, and production configuration have been fully approved.
+Public wallet connection may be live before mint. Public Summoning remains sealed until the production contract and launch time are approved. Opening Summoning must not expose development/test state as the production mint.

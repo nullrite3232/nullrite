@@ -1,48 +1,56 @@
 "use client";
 
-import "@rainbow-me/rainbowkit/styles.css";
-import {
-  RainbowKitProvider,
-  getDefaultConfig,
-} from "@rainbow-me/rainbowkit";
-import {
-  metaMaskWallet,
-  coinbaseWallet,
-  okxWallet,
-  rabbyWallet,
-  walletConnectWallet,
-} from "@rainbow-me/rainbowkit/wallets";
+import { createAppKit } from "@reown/appkit";
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { RH_CHAIN, RH_TESTNET_CHAIN } from "@/lib/chain";
 import { RitualProvider } from "@/components/RitualContext";
-
-const config = getDefaultConfig({
-  appName: "NULL RITE",
-  projectId: process.env.NEXT_PUBLIC_WC_ID ?? "",
-  chains: [RH_TESTNET_CHAIN, RH_CHAIN],
-  wallets: [
-    {
-      groupName: "Recommended",
-      wallets: [metaMaskWallet, rabbyWallet, okxWallet],
-    },
-    {
-      groupName: "Other",
-      wallets: [coinbaseWallet, walletConnectWallet],
-    },
-  ],
-  ssr: true,
-});
+import {
+  appKitMetadata,
+  appKitNetworks,
+  projectId,
+  reownConfigured,
+  robinhoodNetwork,
+  wagmiAdapter,
+} from "@/lib/appkit";
 
 const queryClient = new QueryClient();
 
+createAppKit({
+  adapters: [wagmiAdapter],
+  networks: appKitNetworks,
+  defaultNetwork: robinhoodNetwork,
+  projectId,
+  metadata: appKitMetadata,
+  themeMode: "dark",
+  themeVariables: {
+    "--apkt-font-family": "Inter, sans-serif",
+    "--apkt-accent": "#70ff95",
+    "--apkt-color-mix": "#17101f",
+    "--apkt-color-mix-strength": 18,
+    "--apkt-border-radius-master": "2px",
+    "--apkt-z-index": 9999,
+  },
+  features: {
+    analytics: false,
+    email: false,
+    socials: [],
+  },
+  defaultAccountTypes: {
+    eip155: "eoa",
+  },
+});
+
+if (!reownConfigured && typeof window !== "undefined") {
+  console.warn(
+    "NULL RITE: Reown AppKit is running without a production Project ID. Injected wallets may work, but mobile WalletConnect handoff requires NEXT_PUBLIC_REOWN_PROJECT_ID in Vercel."
+  );
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={wagmiAdapter.wagmiConfig} reconnectOnMount>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
-          <RitualProvider>{children}</RitualProvider>
-        </RainbowKitProvider>
+        <RitualProvider>{children}</RitualProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
