@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * NULL RITE route pages for the current testnet phase.
+ * NULL RITE route pages for the current sealed launch-facing experience.
  * RouteRouter controls visibility via hash navigation.
  */
 export function RoutePages() {
@@ -42,7 +42,7 @@ export function RoutePages() {
               </div>
               <div className="ritual-row">
                 <span>Network</span>
-                <span>ROBINHOOD TESTNET</span>
+                <span>ROBINHOOD CHAIN</span>
               </div>
               <div className="ritual-row">
                 <span>Artwork</span>
@@ -110,7 +110,7 @@ export function RoutePages() {
       <section className="route-page" id="docsPage" aria-hidden="true">
         <div className="route-inner">
           <div className="route-topline">
-            <div className="route-code">NULL RITE // DOCUMENTATION // TESTNET V1</div>
+            <div className="route-code">NULL RITE // DOCUMENTATION // V1</div>
             <button className="route-back" data-close-page>
               ← Return Home
             </button>
@@ -119,10 +119,10 @@ export function RoutePages() {
           <div className="docs-layout">
             <aside className="docs-index">
               <a href="#docs-overview">Overview</a>
+              <a href="#docs-rite">$RITE</a>
               <a href="#docs-vessels">Vessels</a>
               <a href="#docs-summoning">Summoning</a>
               <a href="#docs-reveal">Reveal</a>
-              <a href="#docs-rite">$RITE</a>
               <a href="#docs-gate">The Gate</a>
             </aside>
 
@@ -134,13 +134,13 @@ export function RoutePages() {
                 <h2>NULL RITE</h2>
                 <p>
                   NULL RITE is a collection of 3,232 Vessels on Robinhood Chain.
-                  The current website is operating against Robinhood Testnet while
-                  the interface and mint flow are being finalized.
+                  The launch unfolds as a sequence: $RITE awakens, Vessels are
+                  summoned, identities are revealed, and only then does the Gate
+                  begin to write persistent history.
                 </p>
                 <p className="docs-note">
-                  V1 documentation describes the launch-facing website only.
-                  Live Gate mechanics and later phases can be added when the
-                  frontend and backend are ready.
+                  V1 documentation describes the launch-facing website. The Gate
+                  remains sealed until the next phase is opened.
                 </p>
                 <div className="docs-spec">
                   <div className="ritual-row">
@@ -148,12 +148,12 @@ export function RoutePages() {
                     <span>3,232 VESSELS</span>
                   </div>
                   <div className="ritual-row">
-                    <span>Current Network</span>
-                    <span>ROBINHOOD TESTNET</span>
+                    <span>Network</span>
+                    <span>ROBINHOOD CHAIN</span>
                   </div>
                   <div className="ritual-row">
                     <span>Mint Currency</span>
-                    <span>TESTNET ETH</span>
+                    <span>ETH</span>
                   </div>
                   <div className="ritual-row">
                     <span>Wallet Limit</span>
@@ -164,6 +164,24 @@ export function RoutePages() {
                     <span>1–5 VESSELS</span>
                   </div>
                 </div>
+              </article>
+
+              <article id="docs-rite">
+                <div className="docs-status">
+                  <i></i>Launch Layer // Sealed
+                </div>
+                <h2>$RITE</h2>
+                <p>
+                  $RITE precedes the Vessel Summoning in the NULL RITE launch
+                  sequence. It is the ritual fuel: the means to participate in
+                  eligibility, Offerings, irreversible decisions and future Gate
+                  access.
+                </p>
+                <p>
+                  A Vessel is the identity that walks the path. $RITE is not that
+                  identity; it is the means to act. Its live token action remains
+                  sealed until the launch layer opens.
+                </p>
               </article>
 
               <article id="docs-vessels">
@@ -177,9 +195,9 @@ export function RoutePages() {
                   sealed.
                 </p>
                 <p>
-                  After Reveal, each Vessel exposes its born identity. Later
-                  Gate history is intended to remain a separate layer so the
-                  original artwork and born traits do not need to be overwritten.
+                  After Reveal, each Vessel exposes its born identity. Later Gate
+                  history remains a separate layer so the original artwork and
+                  born traits do not need to be overwritten.
                 </p>
               </article>
 
@@ -189,12 +207,12 @@ export function RoutePages() {
                 </div>
                 <h2>THE SUMMONING</h2>
                 <p>
-                  The Summoning is the mint experience. The current testnet
-                  contract allows 1 to 5 Vessels per transaction, while the
-                  collection policy allows up to 10 Vessels per wallet.
+                  The Summoning is the mint experience. The current interface
+                  supports 1 to 5 Vessels per transaction, while the collection
+                  policy allows up to 10 Vessels per wallet.
                 </p>
                 <p>
-                  After the wallet signs, the interface waits for the real chain
+                  After the wallet signs, the interface waits for chain
                   confirmation automatically. A successful mint means a Vessel
                   has answered; it does not reveal the final form immediately.
                 </p>
@@ -225,30 +243,12 @@ export function RoutePages() {
                 <h2>THE REVEAL</h2>
                 <p>
                   Mint and Reveal are separate moments. Before Reveal, the
-                  Collection page uses the sealed state. When Reveal is
-                  activated, that page can be updated to display actual Vessel
-                  artwork, rarity and traits.
+                  Collection page uses the sealed state. When Reveal is activated,
+                  that page can display actual Vessel artwork, rarity and traits.
                 </p>
                 <p>
-                  The exact Reveal timing and technical mechanism will be
-                  published with the final launch parameters.
-                </p>
-              </article>
-
-              <article id="docs-rite">
-                <div className="docs-status">
-                  <i></i>Future Layer
-                </div>
-                <h2>$RITE</h2>
-                <p>
-                  $RITE is conceptually separate from the Vessel itself. A
-                  Vessel is the identity. $RITE is designed as the means to
-                  participate in later ritual actions, eligibility and Gate
-                  interactions.
-                </p>
-                <p>
-                  For the current testnet phase, $RITE remains sealed and no
-                  live token action is exposed by the website.
+                  Reveal exposes the Vessel&apos;s born identity. It does not open
+                  the Gate; the Gate remains a separate phase that begins later.
                 </p>
               </article>
 
@@ -263,9 +263,9 @@ export function RoutePages() {
                   unfinished mechanics.
                 </p>
                 <p>
-                  When the team opens the Gate, the same route can be replaced
-                  with the live experience handled by the frontend and backend
-                  team.
+                  When the Gate opens, a Vessel can make irreversible choices
+                  that become part of its persistent Record and influence what
+                  future Gates show it.
                 </p>
                 <div className="docs-spec">
                   <div className="ritual-row">

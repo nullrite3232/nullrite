@@ -28,15 +28,13 @@ export default function Home() {
         <main id="top">
           <section className="hero">
             <div className="hero-copy">
-              <div className="eyebrow">THE ASSEMBLY // TESTNET // PRE-REVEAL</div>
+              <div className="eyebrow">THE ASSEMBLY // PRE-REVEAL</div>
               <h1>
                 3,232 VESSELS<span className="small">WILL ANSWER.</span>
               </h1>
               <p className="lead">
-                The forms remain hidden. Every Vessel will enter NULL RITE with
-                an identity of its own—and a history that has yet to be written.
-                The current Summoning flow is running on Robinhood Testnet while
-                the launch interface is finalized.
+                The forms remain hidden. Every Vessel enters NULL RITE with an
+                identity of its own—and a history that has yet to be written.
               </p>
               <div className="actions">
                 <button className="btn primary" onClick={open}>
@@ -132,8 +130,8 @@ export default function Home() {
                 <div className="n">01 / RITE</div>
                 <h3>$RITE Awakens</h3>
                 <p>
-                  $RITE is a future ritual layer. It remains sealed during the
-                  current testnet phase.
+                  $RITE precedes the Vessel Summoning and acts as ritual fuel for
+                  eligibility, Offerings, decisions and future Gate access.
                 </p>
               </div>
               <div className="step">
@@ -179,7 +177,7 @@ export default function Home() {
                   $RITE and VESSELS serve different roles. A Vessel is the
                   identity that walks the path. $RITE is designed as ritual fuel
                   for eligibility, Offerings, decisions and future Gate access.
-                  No live $RITE action is exposed in the current testnet phase.
+                  Its live token action remains sealed until the launch layer opens.
                 </p>
                 <div className="rite-points">
                   <div className="rp">
@@ -270,7 +268,7 @@ export default function Home() {
 
         <footer className="footer">
           <span>NULL RITE // 3,232 VESSELS</span>
-          <span>ROBINHOOD TESTNET // V1 WEB CONCEPT</span>
+          <span>ROBINHOOD CHAIN // V1</span>
         </footer>
       </div>
 
