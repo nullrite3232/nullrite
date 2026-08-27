@@ -8,16 +8,14 @@ import {
 import {
   metaMaskWallet,
   coinbaseWallet,
-  rainbowWallet,
-  walletConnectWallet,
   okxWallet,
-  phantomWallet,
   rabbyWallet,
-  braveWallet,
+  walletConnectWallet,
 } from "@rainbow-me/rainbowkit/wallets";
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RH_CHAIN, RH_TESTNET_CHAIN } from "@/lib/chain";
+import { RitualProvider } from "@/components/RitualContext";
 
 const config = getDefaultConfig({
   appName: "NULL RITE",
@@ -26,17 +24,11 @@ const config = getDefaultConfig({
   wallets: [
     {
       groupName: "Recommended",
-      wallets: [metaMaskWallet, coinbaseWallet, rainbowWallet],
+      wallets: [metaMaskWallet, rabbyWallet, okxWallet],
     },
     {
-      groupName: "Popular",
-      wallets: [
-        okxWallet,
-        phantomWallet,
-        rabbyWallet,
-        braveWallet,
-        walletConnectWallet,
-      ],
+      groupName: "Other",
+      wallets: [coinbaseWallet, walletConnectWallet],
     },
   ],
   ssr: true,
@@ -48,7 +40,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>{children}</RainbowKitProvider>
+        <RainbowKitProvider>
+          <RitualProvider>{children}</RitualProvider>
+        </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

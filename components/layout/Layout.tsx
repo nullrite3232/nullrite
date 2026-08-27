@@ -1,21 +1,15 @@
 "use client";
 
 import { ReactNode } from "react";
-import { Header } from "./Header";
-import { Footer } from "./Footer";
+import { Header } from "@/components/Header";
 
-interface LayoutProps {
-  children: ReactNode;
-}
-
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col bg-bg text-off">
+    <>
+      <div className="grain" aria-hidden="true" />
+      <div className="vignette" aria-hidden="true" />
       <Header />
-      <main className="flex-1 pt-16 md:pt-20" id="main-content">
-        {children}
-      </main>
-      <Footer />
-    </div>
+      {children}
+    </>
   );
 }

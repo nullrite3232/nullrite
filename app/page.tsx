@@ -1,202 +1,303 @@
 "use client";
 
-import { SITE, STATE, TERMS, SOCIALS } from "@/lib/siteConfig";
-import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
-import { Section } from "@/components/layout/Container";
-import Link from "next/link";
+import { useState } from "react";
+import { IntroGate } from "@/components/IntroGate";
+import { useRitual } from "@/components/RitualContext";
+import { RoutePages } from "@/components/RoutePages";
+import { RouteRouter } from "@/components/RouteRouter";
+import { ASSETS } from "@/lib/siteConfig";
 
 export default function Home() {
+  const { open } = useRitual();
+  const [siteVisible, setSiteVisible] = useState(false);
+
+  const openDocs = () => {
+    const link = document.querySelector<HTMLElement>(
+      '.main-nav a[data-nav="docs"]'
+    );
+    link?.click();
+  };
+
   return (
     <>
-      <Section variant="dark" padding="xl" className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-radial" aria-hidden="true" />
-        <div className="absolute inset-0 bg-gradient-conic opacity-50" aria-hidden="true" />
-        
-        <div className="relative max-w-5xl mx-auto text-center">
-          <div className="animate-fade-in">
-            <span className="sec-tag">THE ASSEMBLY // PHASE I</span>
-          </div>
-          
-          <h1 className="h1 animate-slide-up delay-100">
-            3,232 VESSELS<br />
-            <span className="text-acid">WILL ANSWER.</span>
-          </h1>
-          
-          <p className="p-lg animate-slide-up delay-200 mx-auto">
-            The Rite already exists. The Vessels are assembling. The Gate remains sealed.
-          </p>
+      <IntroGate onEnter={() => setSiteVisible(true)} />
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10 animate-slide-up delay-300">
-            <Link href="/mint">
-              <Button size="lg" variant="primary" className="min-w-[200px]">
-                BEGIN THE RITE
-              </Button>
-            </Link>
-            <Link href="/collection">
-              <Button size="lg" variant="ghost" className="min-w-[200px]">
-                VIEW VESSELS
-              </Button>
-            </Link>
-          </div>
-
-          <div className="mt-16 animate-fade-in delay-400">
-            <div className="flex flex-wrap items-center justify-center gap-6 text-dim2 text-sm font-mono tracking-wider">
-              <span>SUPPLY: <span className="text-off font-bold">{SITE.supply.toLocaleString()}</span></span>
-              <span className="text-line">|</span>
-              <span>MAX/WALLET: <span className="text-off font-bold">{SITE.maxMintPerWallet}</span></span>
-              <span className="text-line">|</span>
-              <span>COST: <span className="text-off font-bold">{SITE.mintPriceEth} ETH</span></span>
-              <span className="text-line">|</span>
-              <span>CHAIN: <span className="text-off font-bold">{SITE.chainName}</span></span>
-            </div>
-          </div>
-        </div>
-
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce" aria-hidden="true">
-          <svg className="w-6 h-6 text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-          </svg>
-        </div>
-      </Section>
-
-      <Section padding="xl" className="bg-black2">
-        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {[
-            {
-              icon: (
-                <svg className="w-8 h-8 text-acid" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              ),
-              title: TERMS.mint,
-              desc: "Summon your Vessel. Max 10 per wallet. The Assembly awaits your resonance.",
-              href: "/mint",
-              cta: "SUMMON NOW",
-            },
-            {
-              icon: (
-                <svg className="w-8 h-8 text-acid" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-              ),
-              title: TERMS.preReveal,
-              desc: "3,232 Forms remain Sealed. Reveal follows the Assembly. Identity concealed until The Reveal.",
-              href: "/collection",
-              cta: "VIEW COLLECTION",
-            },
-            {
-              icon: (
-                <svg className="w-8 h-8 text-acid" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              ),
-              title: TERMS.gate,
-              desc: "The Gate remains Sealed. Await the Resonance. $RITE stakers inherit passage.",
-              href: "/gate",
-              cta: "CHECK GATE",
-            },
-          ].map((item, i) => (
-            <Link key={item.title} href={item.href} className="group">
-              <Card variant="elevated" hover padding="lg" className="h-full flex flex-col">
-                <div className="mb-4">{item.icon}</div>
-                <h3 className="font-mono text-xl tracking-wider text-off mb-2 group-hover:text-acid transition-colors">
-                  {item.title}
-                </h3>
-                <p className="text-dim2 flex-1 mb-6">{item.desc}</p>
-                <Button variant="ghost" size="sm" className="w-full group-hover:text-acid group-hover:border-acid/50 transition-colors">
-                  {item.cta} →
-                </Button>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </Section>
-
-      <Section padding="xl">
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="sec-tag">{TERMS.tokenVisual}</span>
-          <h2 className="h2 mb-6">$RITE — THE RITE CORE</h2>
-          <p className="p-lg mb-10">
-            $RITE is the native token of NULL RITE. It powers The Gate — stakers earn passage,
-            governance rights, and a share of the protocol's resonance. Tokenomics designed for
-            long-term alignment, not short-term extraction.
-          </p>
-          <div className="grid sm:grid-cols-3 gap-4 mb-10">
-            <Card variant="outlined" padding="md">
-              <div className="text-3xl font-bold text-acid font-mono">69%</div>
-              <div className="text-dim2 text-sm mt-1">Community & Rewards</div>
-            </Card>
-            <Card variant="outlined" padding="md">
-              <div className="text-3xl font-bold text-acid font-mono">21%</div>
-              <div className="text-dim2 text-sm mt-1">Treasury & Gate</div>
-            </Card>
-            <Card variant="outlined" padding="md">
-              <div className="text-3xl font-bold text-acid font-mono">10%</div>
-              <div className="text-dim2 text-sm mt-1">Team & Advisors</div>
-            </Card>
-          </div>
-          <Link href="/docs">
-            <Button variant="outline">READ TOKENOMICS</Button>
-          </Link>
-        </div>
-      </Section>
-
-      <Section variant="alt" padding="xl">
-        <div className="max-w-4xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div>
-              <span className="sec-tag">SECURITY FIRST</span>
-              <h2 className="h2 mb-4">Built to Endure</h2>
-              <p className="p-lg">
-                NULL RITE contracts are audited, tested, and verified. Every function is
-                battle-tested on testnet before mainnet deployment. No proxies, no upgradeability
-                backdoors, no hidden admin functions. What you see is what executes.
+      <div className={`site ${siteVisible ? "visible" : ""}`} id="site">
+        <main id="top">
+          {/* HERO */}
+          <section className="hero">
+            <div className="hero-copy">
+              <div className="eyebrow">THE ASSEMBLY // PRE-REVEAL</div>
+              <h1>
+                3,232 VESSELS<span className="small">WILL ANSWER.</span>
+              </h1>
+              <p className="lead">
+                The Rite already exists. The forms remain hidden. Every Vessel
+                will enter NULL RITE with an identity of its own—and a history
+                that has yet to be written.
               </p>
-              <ul className="space-y-3 mt-6" role="list">
-                {[
-                  "OpenZeppelin ERC-721A implementation",
-                  "Commitment-based reveal (no centralized reveal)",
-                  "ReentrancyGuard on all external calls",
-                  "Verified on Blockscout / Etherscan",
-                  "Testnet acceptance: 27/27 tests passed",
-                ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-dim2">
-                    <svg className="w-5 h-5 text-acid flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <Card variant="elevated" padding="lg" className="glow-acid">
-              <div className="font-mono text-xs tracking-widest text-acid mb-4">CONTRACT STATUS</div>
-              <div className="space-y-4 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-dim2">Vessel NFT</span>
-                  <span className="text-acid font-mono">DEPLOYED</span>
+              <div className="actions">
+                <button className="btn primary" onClick={open}>
+                  Summon a Vessel
+                </button>
+                <button
+                  className="btn"
+                  onClick={() =>
+                    window.open("https://x.com/nullrite3232", "_blank")
+                  }
+                >
+                  Acquire $RITE
+                </button>
+              </div>
+              <div className="meta">
+                <div>
+                  <strong>3,232</strong>
+                  <span>Total Supply</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-dim2">$RITE Token</span>
-                  <span className="text-dim font-mono">PLANNED</span>
+                <div>
+                  <strong>Sealed</strong>
+                  <span>Reveal State</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-dim2">Gate Contract</span>
-                  <span className="text-dim font-mono">DESIGN PHASE</span>
-                </div>
-                <div className="flex justify-between border-t border-line pt-4">
-                  <span className="text-dim2">Audit</span>
-                  <span className="text-cyan font-mono">PENDING</span>
+                <div>
+                  <strong>Sealed</strong>
+                  <span>Gate State</span>
                 </div>
               </div>
-              <Link href="/verify" className="block mt-6 text-center">
-                <Button variant="outline" className="w-full">VERIFY ADDRESSES</Button>
-              </Link>
-            </Card>
-          </div>
-        </div>
-      </Section>
+            </div>
+
+            <div className="hero-gate">
+              <div className="gate-orbit" />
+              <div className="gate-window">
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="auto"
+                  src={ASSETS.gateLoop}
+                />
+              </div>
+              <div className="gate-status">
+                <div className="gate-status-row">
+                  <span>The Assembly</span>
+                  <span>0 / 3,232</span>
+                </div>
+                <div className="progress">
+                  <i />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* REVEAL / VESSELS */}
+          <section className="reveal" id="vessels">
+            <div className="reveal-media">
+              <img src={ASSETS.vesselGroup} alt="The Order — sealed Vessels" />
+            </div>
+            <div className="reveal-copy">
+              <div className="eyebrow">THE VESSELS // IDENTITY WITHHELD</div>
+              <h2>
+                THE FORMS
+                <br />
+                REMAIN SEALED.
+              </h2>
+              <p>
+                Minting summons a Vessel, but does not immediately expose its
+                final identity. The collection remains hidden until the reveal
+                event. The scene shown here represents the Order—not the final
+                NFT artwork or individual traits.
+              </p>
+              <div className="reveal-state">
+                <span className="dot" />
+                <span>REVEAL_PROTOCOL / DORMANT</span>
+              </div>
+            </div>
+          </section>
+
+          {/* FLOW */}
+          <section className="section">
+            <div className="section-head">
+              <div>
+                <div className="eyebrow">THE RITUAL SEQUENCE</div>
+                <h2>
+                  Mint first.
+                  <br />
+                  The path comes later.
+                </h2>
+              </div>
+              <p>
+                NULL RITE separates acquisition, reveal, and Gate progression so
+                every stage feels like a chapter rather than a normal mint flow.
+              </p>
+            </div>
+            <div className="flow">
+              <div className="step">
+                <div className="n">01 / RITE</div>
+                <h3>$RITE Awakens</h3>
+                <p>
+                  $RITE exists before the Vessels and can determine early
+                  priority through snapshot eligibility.
+                </p>
+              </div>
+              <div className="step">
+                <div className="n">02 / SUMMON</div>
+                <h3>3,232 Answer</h3>
+                <p>
+                  Vessels mint on the NULL RITE site using ETH. Their final forms
+                  remain sealed.
+                </p>
+              </div>
+              <div className="step">
+                <div className="n">03 / REVEAL</div>
+                <h3>The Forms Surface</h3>
+                <p>
+                  Each Vessel reveals its original artwork, born traits, rarity
+                  and token identity.
+                </p>
+              </div>
+              <div className="step">
+                <div className="n">04 / GATE</div>
+                <h3>The History Begins</h3>
+                <p>
+                  Later Gates force irreversible decisions that become part of
+                  each Vessel&apos;s persistent Record.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* $RITE */}
+          <section className="section" id="rite">
+            <div className="rite-grid">
+              <div className="rite-core">
+                <img src={ASSETS.riteCore} alt="$RITE — the Rite Core" />
+              </div>
+              <div className="rite-copy">
+                <div className="eyebrow">$RITE // RITUAL FUEL</div>
+                <h2>
+                  The means to act.
+                  <br />
+                  Not the identity itself.
+                </h2>
+                <p>
+                  $RITE and VESSELS serve different roles. A Vessel is the
+                  identity that walks the path. $RITE is the ritual fuel used for
+                  eligibility, Offerings, decisions and future Gate access.
+                </p>
+                <div className="rite-points">
+                  <div className="rp">
+                    <span>Priority</span>
+                    <span>Snapshot / THE CHOSEN</span>
+                  </div>
+                  <div className="rp">
+                    <span>Offering</span>
+                    <span>Seal irreversible Gate decisions</span>
+                  </div>
+                  <div className="rp">
+                    <span>Access</span>
+                    <span>Requirements for specialized rituals</span>
+                  </div>
+                  <div className="rp">
+                    <span>Vessel</span>
+                    <span>Owns the history and progression</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* RECORD + GATE */}
+          <section className="section" id="record">
+            <div className="section-head">
+              <div>
+                <div className="eyebrow">THE RECORD</div>
+                <h2>
+                  The artwork is born once.
+                  <br />
+                  The history keeps changing.
+                </h2>
+              </div>
+              <p>
+                Born traits stay intact. Gate decisions live as a separate history
+                layer tied to the Vessel.
+              </p>
+            </div>
+            <div className="duo">
+              <div className="panel">
+                <div className="eyebrow">VESSEL // SAMPLE RECORD</div>
+                <h3>BORN</h3>
+                <p>
+                  Original metadata remains the immutable visual identity of the
+                  collection.
+                </p>
+                <div className="record-lines">
+                  <div>
+                    <span>VESSEL_ID</span>
+                    <span>SEALED</span>
+                  </div>
+                  <div>
+                    <span>RARITY</span>
+                    <span>WITHHELD</span>
+                  </div>
+                  <div>
+                    <span>TRAITS</span>
+                    <span>WITHHELD</span>
+                  </div>
+                </div>
+              </div>
+              <div className="panel" id="gate-teaser">
+                <div className="eyebrow">GATE // FUTURE STATE</div>
+                <h3>THE RECORD</h3>
+                <p>
+                  Once the Gate opens, decisions such as KNEEL, WITNESS or REFUSE
+                  can permanently affect what future Gates show that Vessel.
+                </p>
+                <div className="record-lines">
+                  <div>
+                    <span>GATE_I</span>
+                    <span>NOT OPENED</span>
+                  </div>
+                  <div>
+                    <span>GATE_II</span>
+                    <span>UNDEFINED</span>
+                  </div>
+                  <div>
+                    <span>CLASS</span>
+                    <span>UNDEFINED</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="final" id="closing">
+            <div className="final-inner">
+              <div className="eyebrow">NULL RITE // THE GATE REMAINS SEALED</div>
+              <h2>EVERY CHOICE CHANGES WHAT COMES NEXT.</h2>
+              <p>
+                The Gate does not give a Vessel something. The Gate makes the
+                Vessel choose something.
+              </p>
+              <div className="actions" style={{ justifyContent: "center" }}>
+                <button className="btn primary" onClick={open}>
+                  Summon a Vessel
+                </button>
+                <button className="btn" onClick={openDocs}>
+                  Read the Record
+                </button>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <footer className="footer">
+          <span>NULL RITE // 3,232 VESSELS</span>
+          <span>ROBINHOOD CHAIN // V1 WEB CONCEPT</span>
+        </footer>
+      </div>
+
+      <RoutePages />
+      <RouteRouter />
     </>
   );
 }

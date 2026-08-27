@@ -52,3 +52,15 @@ export const IPFS = {
   gateway: "https://gateway.lighthouse.storage/ipfs/",
   collectionCID: "QmXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", // TODO: replace with actual CID after upload
 } as const;
+
+// v15 media assets — hosted on Cloudinary (replaces v13 inline base64)
+export const ASSETS = {
+  gateLoop:
+    "https://res.cloudinary.com/ugbfexbl/video/upload/v1787805853/gate-loop-web-optimized.mp4",
+  vesselGroup:
+    "https://res.cloudinary.com/ugbfexbl/image/upload/v1787805854/vessel-group.png",
+  riteCore:
+    "https://res.cloudinary.com/ugbfexbl/image/upload/v1787805854/rite-core.png",
+  sealedVessel:
+    "https://res.cloudinary.com/ugbfexbl/image/upload/v1787805863/sealed-vessel.png",
+} as const;
