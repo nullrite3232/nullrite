@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAppKit } from "@reown/appkit/react";
 import {
   useAccount,
   useChainId,
@@ -9,7 +10,6 @@ import {
   useWriteContract,
 } from "wagmi";
 import { formatEther, parseEventLogs, zeroAddress } from "viem";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { RH_TESTNET_CHAIN } from "@/lib/chain";
 import { ASSETS, SITE } from "@/lib/siteConfig";
 import { useAssemblySupply } from "@/lib/useAssemblySupply";
@@ -77,7 +77,7 @@ export function RitualOverlay({
 }) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const { openConnectModal } = useConnectModal() ?? {};
+  const { open: openWallet } = useAppKit();
   const { switchChainAsync } = useSwitchChain();
   const {
     writeContractAsync,
@@ -215,7 +215,7 @@ export function RitualOverlay({
     setTxError(null);
 
     if (!isConnected) {
-      openConnectModal?.();
+      await openWallet({ view: "Connect" });
       return;
     }
 
@@ -277,8 +277,8 @@ export function RitualOverlay({
     ? `${qty} Vessels have answered.`
     : "A Vessel has answered.";
   const successCopy = plural
-    ? "Their final forms remain sealed. The Reveal event will expose each born identity, traits, and rarity later."
-    : "Its final form remains sealed. The Reveal event will expose its born identity, traits, and rarity later.";
+    ? "Their final forms remain sealed. The Reveal event will expose each born artwork, traits, and rarity later."
+    : "Its final form remains sealed. The Reveal event will expose its born artwork, traits, and rarity later.";
 
   const allowanceLabel = !isConnected
     ? "CONNECT TO CHECK"
@@ -291,18 +291,18 @@ export function RitualOverlay({
           : `${walletAllowance} REMAINING`;
 
   const beginLabel = !publicMintActive
-    ? "Summoning Sealed"
+    ? "SUMMONING SEALED"
     : remaining === 0
-      ? "Assembly Complete"
+      ? "ASSEMBLY COMPLETE"
       : walletAllowance === 0
-        ? "Wallet Limit Reached"
+        ? "WALLET LIMIT REACHED"
         : isContractStateLoading
-          ? "Syncing Contract"
+          ? "SYNCING CONTRACT"
           : isAllowanceLoading
-            ? "Checking Wallet"
+            ? "CHECKING WALLET"
             : isPending
-              ? "Awaiting Signature"
-              : "Begin the Rite";
+              ? "AWAITING SIGNATURE"
+              : `SUMMON ${qty} ${plural ? "VESSELS" : "VESSEL"}`;
 
   const beginDisabled =
     isPending ||
@@ -379,9 +379,9 @@ export function RitualOverlay({
           <section className={`ritual-view ritual-await ${stage === "signature" ? "active" : ""}`} id="viewSignature">
             <div className="ritual-await-inner">
               <div className="await-art"><img src={ASSETS.sealedVessel} alt="Sealed Vessel" /></div>
-              <div className="eyebrow">THE RITE AWAITS YOUR SIGNATURE</div>
+              <div className="eyebrow">THE SUMMONING AWAITS YOUR SIGNATURE</div>
               <h2 className="await-head">Awaiting Wallet.</h2>
-              <p className="await-copy">Confirm the transaction in your wallet. The Rite will continue automatically after it is submitted.</p>
+              <p className="await-copy">Confirm the transaction in your wallet. The Summoning will continue automatically after it is submitted.</p>
               <div className="await-status">
                 <div><span className="live">SIGNATURE REQUEST</span><span className="live">WAITING</span></div>
                 <div><span className="muted">TRANSACTION SUBMITTED</span><span className="muted">WAITING</span></div>

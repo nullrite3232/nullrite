@@ -12,7 +12,7 @@ export function WalletButton() {
     return (
       <button
         className="wallet"
-        onClick={() => open({ view: "Account" })}
+        onClick={() => void open({ view: "Account" })}
         title="Wallet account"
       >
         {short}
@@ -23,7 +23,7 @@ export function WalletButton() {
   return (
     <button
       className="wallet"
-      onClick={() => open({ view: "Connect", namespace: "eip155" })}
+      onClick={() => void open({ view: "Connect" })}
     >
       Connect Wallet
     </button>
