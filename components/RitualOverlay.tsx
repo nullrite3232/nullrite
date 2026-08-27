@@ -53,7 +53,7 @@ function friendlyTxError(message?: string) {
     return "The transaction was rejected in the wallet.";
   }
   if (lower.includes("insufficient funds")) {
-    return "Insufficient testnet ETH for this summoning.";
+    return "Insufficient ETH for this summoning.";
   }
   if (lower.includes("exceeds") || lower.includes("max")) {
     return "The contract rejected this quantity. Check the per-wallet or per-summoning limit.";
@@ -233,7 +233,7 @@ export function RitualOverlay({
               <img src={ASSETS.sealedVessel} alt="Sealed Vessel" />
             </div>
             <div className="ritual-copy">
-              <div className="eyebrow">THE SUMMONING // TESTNET</div>
+              <div className="eyebrow">THE SUMMONING</div>
               <h2>Call a Vessel.</h2>
               <p>
                 Something beyond the Gate is listening. Summon up to {SITE.maxPerTx} Vessels per transaction
@@ -258,7 +258,7 @@ export function RitualOverlay({
 
               <div className="ritual-data">
                 <div className="ritual-row"><span>Summoning Cost</span><span id="sumCost">{cost} ETH</span></div>
-                <div className="ritual-row"><span>Network</span><span>Robinhood Testnet</span></div>
+                <div className="ritual-row"><span>Network</span><span>Robinhood Chain</span></div>
                 <div className="ritual-row"><span>Reveal State</span><span>SEALED</span></div>
                 <div className="ritual-row">
                   <span>Vessels Summoned</span>
@@ -282,7 +282,7 @@ export function RitualOverlay({
               <div className="await-art"><img src={ASSETS.sealedVessel} alt="Sealed Vessel" /></div>
               <div className="eyebrow">THE RITE AWAITS YOUR SIGNATURE</div>
               <h2 className="await-head">Awaiting Wallet.</h2>
-              <p className="await-copy">Confirm the transaction in your wallet. This testnet transaction will continue automatically after it is submitted.</p>
+              <p className="await-copy">Confirm the transaction in your wallet. The Rite will continue automatically after it is submitted.</p>
               <div className="await-status">
                 <div><span className="live">SIGNATURE REQUEST</span><span className="live">WAITING</span></div>
                 <div><span className="muted">TRANSACTION SUBMITTED</span><span className="muted">WAITING</span></div>
@@ -297,7 +297,7 @@ export function RitualOverlay({
               <div className="await-art"><img src={ASSETS.riteCore} alt="Rite Core" /></div>
               <div className="eyebrow">AWAITING THE CHAIN</div>
               <h2 className="await-head">A Vessel is answering.</h2>
-              <p className="await-copy">The transaction has been submitted to Robinhood Testnet. The page will advance automatically after confirmation.</p>
+              <p className="await-copy">The transaction has been submitted to Robinhood Chain. The page will advance automatically after confirmation.</p>
               <div className="await-status">
                 <div><span className="done">SIGNATURE ACCEPTED</span><span className="done">DONE</span></div>
                 <div><span className="done">TRANSACTION SUBMITTED</span><span className="done">DONE</span></div>
@@ -321,7 +321,7 @@ export function RitualOverlay({
                 </div>
                 <div className="ritual-row"><span>Assembly</span><span>{minted === null ? "—" : minted.toLocaleString()} / {SITE.supply.toLocaleString()}</span></div>
                 <div className="ritual-row"><span>Reveal State</span><span>SEALED</span></div>
-                <div className="ritual-row"><span>Network</span><span>Robinhood Testnet</span></div>
+                <div className="ritual-row"><span>Network</span><span>Robinhood Chain</span></div>
                 <div className="ritual-row"><span>Gate State</span><span>SEALED</span></div>
               </div>
               <div className="success-actions">
