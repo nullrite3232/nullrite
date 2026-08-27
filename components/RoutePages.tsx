@@ -1,5 +1,7 @@
 "use client";
 
+import { CollectionPage } from "@/components/CollectionPage";
+
 /**
  * NULL RITE route pages for the current sealed launch-facing experience.
  * RouteRouter controls visibility via hash navigation.
@@ -7,53 +9,7 @@
 export function RoutePages() {
   return (
     <>
-      {/* COLLECTION */}
-      <section className="route-page" id="collectionPage" aria-hidden="true">
-        <div className="route-inner">
-          <div className="route-topline">
-            <div className="route-code">NULL RITE // COLLECTION // PRE-REVEAL</div>
-            <button className="route-back" data-close-page>
-              ← Return Home
-            </button>
-          </div>
-
-          <div className="collection-head">
-            <div>
-              <div className="eyebrow">THE VESSELS</div>
-              <h1 className="route-title">
-                3,232 FORMS
-                <br />
-                REMAIN SEALED.
-              </h1>
-              <p className="route-sub">
-                This is the collection state before reveal. Ownership may exist,
-                but born identity, rarity and traits remain withheld until the
-                Reveal is activated.
-              </p>
-            </div>
-            <div className="collection-state">
-              <div className="ritual-row">
-                <span>Total Supply</span>
-                <span>3,232</span>
-              </div>
-              <div className="ritual-row">
-                <span>Reveal State</span>
-                <span>SEALED</span>
-              </div>
-              <div className="ritual-row">
-                <span>Network</span>
-                <span>ROBINHOOD CHAIN</span>
-              </div>
-              <div className="ritual-row">
-                <span>Artwork</span>
-                <span>WITHHELD</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="sealed-grid" id="sealedCollectionGrid" />
-        </div>
-      </section>
+      <CollectionPage />
 
       {/* GATE */}
       <section className="route-page" id="gatePage" aria-hidden="true">

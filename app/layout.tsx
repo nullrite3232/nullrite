@@ -1,5 +1,6 @@
 import "./globals.css";
 import "./responsive-fixes.css";
+import "./collection.css";
 import { Providers } from "./providers";
 import { Layout } from "@/components/layout/Layout";
 

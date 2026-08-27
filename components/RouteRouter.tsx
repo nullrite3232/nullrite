@@ -2,13 +2,11 @@
 
 import { useEffect } from "react";
 import { useRitual } from "@/components/RitualContext";
-import { ASSETS } from "@/lib/siteConfig";
 
 const ROUTE_HASHES = ["#/collection", "#/gate", "#/docs"];
 
 /**
- * v15 EXACT port — simple front-end routing for distinct pages.
- * Mirrors the routing block of /home/ubuntu/v15_ref/app.js 1:1.
+ * Lightweight front-end routing for distinct pages.
  */
 export function RouteRouter() {
   const { open } = useRitual();
@@ -53,8 +51,13 @@ export function RouteRouter() {
       navLinks.forEach((link) =>
         link.classList.toggle("active", link.dataset.nav === name)
       );
-      if (updateHash)
-        history.replaceState(null, "", location.pathname + location.search + "#/" + name);
+      if (updateHash) {
+        history.replaceState(
+          null,
+          "",
+          location.pathname + location.search + "#/" + name
+        );
+      }
     };
 
     const onNavClick = (e: Event) => {
@@ -71,7 +74,7 @@ export function RouteRouter() {
         e.preventDefault();
         closeRoutePage(false);
         history.replaceState(null, "", location.pathname + location.search + "#top");
-        open(); // openSummoning
+        open();
         return;
       }
       if (pages[target ?? ""]) {
@@ -81,9 +84,11 @@ export function RouteRouter() {
     };
 
     navLinks.forEach((link) => link.addEventListener("click", onNavClick));
-    document
-      .querySelectorAll<HTMLElement>("[data-close-page]")
-      .forEach((btn) => btn.addEventListener("click", () => closeRoutePage(true)));
+    const closeButtons = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-close-page]")
+    );
+    const onCloseClick = () => closeRoutePage(true);
+    closeButtons.forEach((btn) => btn.addEventListener("click", onCloseClick));
 
     // Reuse the current Gate video inside the dedicated sealed Gate page.
     const sourceGateVideo = document.querySelector<HTMLVideoElement>(
@@ -96,30 +101,11 @@ export function RouteRouter() {
       gatePageVideo.src = sourceGateVideo.src;
     }
 
-    // Build a lightweight pre-reveal collection using the existing sealed Vessel art.
-    const collectionGrid = document.getElementById("sealedCollectionGrid");
-    const demoIds = [
-      "0001", "0002", "0003", "0004", "0323", "0646",
-      "0969", "1292", "1615", "1938", "2261", "3232",
-    ];
-    if (collectionGrid) {
-      collectionGrid.innerHTML = demoIds
-        .map(
-          (id) => `
-        <article class="sealed-card">
-          <div class="sealed-card-media"><img src="${ASSETS.sealedVessel}" alt="Reveal Vessel Preview"></div>
-          <div class="sealed-card-info"><strong>VESSEL #${id}</strong><span>Identity // Sealed</span></div>
-        </article>`
-        )
-        .join("");
-    }
-
-    // Allow direct prototype hashes.
+    // Allow direct hashes.
     if (location.hash === "#/collection") openRoutePage("collection", false);
     if (location.hash === "#/gate") openRoutePage("gate", false);
     if (location.hash === "#/docs") openRoutePage("docs", false);
 
-    // Hash navigation (back/forward, manual hash edits) — v15 routing parity.
     const onHashChange = () => {
       const h = location.hash;
       if (h === "#/collection" || h === "#/gate" || h === "#/docs") {
@@ -132,6 +118,7 @@ export function RouteRouter() {
 
     return () => {
       navLinks.forEach((link) => link.removeEventListener("click", onNavClick));
+      closeButtons.forEach((btn) => btn.removeEventListener("click", onCloseClick));
       window.removeEventListener("hashchange", onHashChange);
     };
   }, [open]);
