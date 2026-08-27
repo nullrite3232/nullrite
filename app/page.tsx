@@ -24,29 +24,24 @@ export default function Home() {
 
       <div className={`site ${siteVisible ? "visible" : ""}`} id="site">
         <main id="top">
-          {/* HERO */}
           <section className="hero">
             <div className="hero-copy">
-              <div className="eyebrow">THE ASSEMBLY // PRE-REVEAL</div>
+              <div className="eyebrow">THE ASSEMBLY // TESTNET // PRE-REVEAL</div>
               <h1>
                 3,232 VESSELS<span className="small">WILL ANSWER.</span>
               </h1>
               <p className="lead">
-                The Rite already exists. The forms remain hidden. Every Vessel
-                will enter NULL RITE with an identity of its own—and a history
-                that has yet to be written.
+                The forms remain hidden. Every Vessel will enter NULL RITE with
+                an identity of its own—and a history that has yet to be written.
+                The current Summoning flow is running on Robinhood Testnet while
+                the launch interface is finalized.
               </p>
               <div className="actions">
                 <button className="btn primary" onClick={open}>
                   Summon a Vessel
                 </button>
-                <button
-                  className="btn"
-                  onClick={() =>
-                    window.open("https://x.com/nullrite3232", "_blank")
-                  }
-                >
-                  Acquire $RITE
+                <button className="btn" disabled aria-disabled="true">
+                  $RITE // SEALED
                 </button>
               </div>
               <div className="meta">
@@ -80,7 +75,7 @@ export default function Home() {
               <div className="gate-status">
                 <div className="gate-status-row">
                   <span>The Assembly</span>
-                  <span>0 / 3,232</span>
+                  <span>TESTNET</span>
                 </div>
                 <div className="progress">
                   <i />
@@ -89,7 +84,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* REVEAL / VESSELS */}
           <section className="reveal" id="vessels">
             <div className="reveal-media">
               <img src={ASSETS.vesselGroup} alt="The Order — sealed Vessels" />
@@ -114,7 +108,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* FLOW */}
           <section className="section">
             <div className="section-head">
               <div>
@@ -135,16 +128,16 @@ export default function Home() {
                 <div className="n">01 / RITE</div>
                 <h3>$RITE Awakens</h3>
                 <p>
-                  $RITE exists before the Vessels and can determine early
-                  priority through snapshot eligibility.
+                  $RITE is a future ritual layer. It remains sealed during the
+                  current testnet phase.
                 </p>
               </div>
               <div className="step">
                 <div className="n">02 / SUMMON</div>
                 <h3>3,232 Answer</h3>
                 <p>
-                  Vessels mint on the NULL RITE site using ETH. Their final forms
-                  remain sealed.
+                  Vessels mint through the NULL RITE site using ETH. Their final
+                  forms remain sealed.
                 </p>
               </div>
               <div className="step">
@@ -166,14 +159,13 @@ export default function Home() {
             </div>
           </section>
 
-          {/* $RITE */}
           <section className="section" id="rite">
             <div className="rite-grid">
               <div className="rite-core">
                 <img src={ASSETS.riteCore} alt="$RITE — the Rite Core" />
               </div>
               <div className="rite-copy">
-                <div className="eyebrow">$RITE // RITUAL FUEL</div>
+                <div className="eyebrow">$RITE // RITUAL FUEL // SEALED</div>
                 <h2>
                   The means to act.
                   <br />
@@ -181,8 +173,9 @@ export default function Home() {
                 </h2>
                 <p>
                   $RITE and VESSELS serve different roles. A Vessel is the
-                  identity that walks the path. $RITE is the ritual fuel used for
-                  eligibility, Offerings, decisions and future Gate access.
+                  identity that walks the path. $RITE is designed as ritual fuel
+                  for eligibility, Offerings, decisions and future Gate access.
+                  No live $RITE action is exposed in the current testnet phase.
                 </p>
                 <div className="rite-points">
                   <div className="rp">
@@ -206,7 +199,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* RECORD + GATE */}
           <section className="section" id="record">
             <div className="section-head">
               <div>
@@ -292,7 +284,7 @@ export default function Home() {
 
         <footer className="footer">
           <span>NULL RITE // 3,232 VESSELS</span>
-          <span>ROBINHOOD CHAIN // V1 WEB CONCEPT</span>
+          <span>ROBINHOOD TESTNET // V1 WEB CONCEPT</span>
         </footer>
       </div>
 
