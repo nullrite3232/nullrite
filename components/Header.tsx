@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { WalletButton } from "@/components/WalletButton";
 
 const NAV = [
@@ -10,23 +11,41 @@ const NAV = [
   { key: "docs", label: "Docs", href: "#docs" },
 ];
 
-/**
- * v15 EXACT header — hash links with data-nav; RouteRouter intercepts clicks.
- */
 export function Header() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <header>
-      <a href="#top" className="wordmark">
+      <a href="#top" className="wordmark" onClick={() => setMenuOpen(false)}>
         NULL RITE
       </a>
-      <nav className="main-nav">
+
+      <nav className={`main-nav ${menuOpen ? "mobile-open" : ""}`}>
         {NAV.map((n) => (
-          <a key={n.key} href={n.href} data-nav={n.key}>
+          <a
+            key={n.key}
+            href={n.href}
+            data-nav={n.key}
+            onClick={() => setMenuOpen(false)}
+          >
             {n.label}
           </a>
         ))}
       </nav>
-      <WalletButton />
+
+      <div className="header-actions">
+        <WalletButton />
+        <button
+          className={`nav-toggle ${menuOpen ? "open" : ""}`}
+          type="button"
+          aria-label="Toggle navigation"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((v) => !v)}
+        >
+          <span />
+          <span />
+        </button>
+      </div>
     </header>
   );
 }
