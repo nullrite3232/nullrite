@@ -1,9 +1,5 @@
 import { createConfig } from "wagmi";
-import {
-  createConnector,
-  injected,
-  type CreateConnectorFn,
-} from "@wagmi/core";
+import { createConnector, injected } from "@wagmi/core";
 import { defineChain, getAddress, http, numberToHex } from "viem";
 import { RH_CHAIN } from "@/lib/chain";
 
@@ -35,20 +31,13 @@ const walletMetadata = {
   ],
 };
 
-function createWalletConnectConnector(projectId: string): CreateConnectorFn {
-  return createConnector((config) => {
+function createWalletConnectConnector(projectId: string) {
+  return createConnector(((config: any) => {
     let provider: any;
-    let accountsChanged: ((accounts: string[]) => void) | undefined;
-    let chainChanged: ((chainId: string | number) => void) | undefined;
-    let disconnected: (() => void) | undefined;
 
     async function getProvider() {
       if (provider) return provider;
-
-      const { EthereumProvider } = await import(
-        "@walletconnect/ethereum-provider"
-      );
-
+      const { EthereumProvider } = await import("@walletconnect/ethereum-provider");
       provider = await EthereumProvider.init({
         projectId,
         metadata: walletMetadata,
@@ -58,49 +47,24 @@ function createWalletConnectConnector(projectId: string): CreateConnectorFn {
         },
         showQrModal: true,
       });
-
       return provider;
     }
 
-    function attachListeners(target: any) {
-      if (!accountsChanged) {
-        accountsChanged = (accounts: string[]) => {
-          if (!accounts.length) {
-            config.emitter.emit("disconnect");
-            return;
-          }
-          config.emitter.emit("change", {
-            accounts: accounts.map((account) => getAddress(account)),
-          });
-        };
-        target.on("accountsChanged", accountsChanged);
-      }
-
-      if (!chainChanged) {
-        chainChanged = (chainId: string | number) => {
-          config.emitter.emit("change", { chainId: Number(chainId) });
-        };
-        target.on("chainChanged", chainChanged);
-      }
-
-      if (!disconnected) {
-        disconnected = () => config.emitter.emit("disconnect");
-        target.on("disconnect", disconnected);
-        target.on("session_delete", disconnected);
-      }
-    }
-
-    return {
+    const connector: any = {
       id: "walletConnect",
       name: "WalletConnect",
       type: "walletConnect",
 
       async setup() {
         const target = await getProvider().catch(() => null);
-        if (target) attachListeners(target);
+        if (!target) return;
+        target.on("accountsChanged", connector.onAccountsChanged);
+        target.on("chainChanged", connector.onChainChanged);
+        target.on("disconnect", connector.onDisconnect);
+        target.on("session_delete", connector.onDisconnect);
       },
 
-      async connect({ chainId } = {}) {
+      async connect({ chainId }: { chainId?: number } = {}) {
         const target = await getProvider();
         const requestedChainId = chainId ?? robinhoodChain.id;
 
@@ -112,10 +76,7 @@ function createWalletConnectConnector(projectId: string): CreateConnectorFn {
           ? target.accounts
           : await target.enable();
         const accounts = rawAccounts.map((account: string) => getAddress(account));
-
         if (!accounts.length) throw new Error("No wallet account was returned.");
-
-        attachListeners(target);
 
         return {
           accounts,
@@ -151,9 +112,9 @@ function createWalletConnectConnector(projectId: string): CreateConnectorFn {
         }
       },
 
-      async switchChain({ chainId }) {
+      async switchChain({ chainId }: { chainId: number }) {
         const target = await getProvider();
-        const chain = config.chains.find((item) => item.id === chainId);
+        const chain = config.chains.find((item: any) => item.id === chainId);
         if (!chain) throw new Error("Unsupported chain.");
 
         try {
@@ -177,14 +138,33 @@ function createWalletConnectConnector(projectId: string): CreateConnectorFn {
             ],
           });
         }
-
         return chain;
       },
+
+      onAccountsChanged(accounts: string[]) {
+        if (!accounts.length) {
+          config.emitter.emit("disconnect");
+          return;
+        }
+        config.emitter.emit("change", {
+          accounts: accounts.map((account) => getAddress(account)),
+        });
+      },
+
+      onChainChanged(chainId: string) {
+        config.emitter.emit("change", { chainId: Number(chainId) });
+      },
+
+      onDisconnect() {
+        config.emitter.emit("disconnect");
+      },
     };
-  });
+
+    return connector;
+  }) as any);
 }
 
-const connectors: CreateConnectorFn[] = [injected({ shimDisconnect: true })];
+const connectors: any[] = [injected({ shimDisconnect: true })];
 if (walletConnectConfigured) {
   connectors.push(createWalletConnectConnector(walletProjectId));
 }
