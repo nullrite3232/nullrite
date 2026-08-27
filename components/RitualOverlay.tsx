@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   useAccount,
   useChainId,
-  useReadContract,
   useSwitchChain,
   useWaitForTransactionReceipt,
   useWriteContract,
@@ -13,6 +12,7 @@ import { parseEther, parseEventLogs, zeroAddress } from "viem";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { RH_TESTNET_CHAIN } from "@/lib/chain";
 import { ASSETS, SITE } from "@/lib/siteConfig";
+import { useAssemblySupply } from "@/lib/useAssemblySupply";
 
 const MINT_ABI = [
   {
@@ -21,16 +21,6 @@ const MINT_ABI = [
     stateMutability: "payable",
     inputs: [{ name: "quantity", type: "uint256" }],
     outputs: [],
-  },
-] as const;
-
-const SUPPLY_ABI = [
-  {
-    type: "function",
-    name: "totalSupply",
-    stateMutability: "view",
-    inputs: [],
-    outputs: [{ name: "", type: "uint256" }],
   },
 ] as const;
 
@@ -95,17 +85,7 @@ export function RitualOverlay({
     isSuccess: isConfirmed,
     error: receiptError,
   } = useWaitForTransactionReceipt({ hash });
-
-  const { data: totalSupply } = useReadContract({
-    address: SITE.contractAddress as `0x${string}`,
-    abi: SUPPLY_ABI,
-    functionName: "totalSupply",
-    chainId: RH_TESTNET_CHAIN.id,
-    query: {
-      enabled: open && Boolean(SITE.contractAddress),
-      refetchInterval: 8_000,
-    },
-  });
+  const { minted, remaining, refetch: refetchSupply } = useAssemblySupply();
 
   const [stage, setStage] = useState<Stage>("config");
   const [qty, setQty] = useState(1);
@@ -120,18 +100,14 @@ export function RitualOverlay({
       setIds([]);
       setTxError(null);
       reset();
+      void refetchSupply();
     }
-  }, [open, reset]);
+  }, [open, reset, refetchSupply]);
 
   const cost = useMemo(() => {
     const value = SITE.mintPriceEth * qty;
     return Number(value.toFixed(4)).toString();
   }, [qty]);
-
-  const remaining =
-    typeof totalSupply === "bigint"
-      ? Math.max(0, SITE.supply - Number(totalSupply))
-      : null;
 
   useEffect(() => {
     if (hash) setStage("chain");
@@ -180,7 +156,8 @@ export function RitualOverlay({
 
     setIds(mintedIds);
     setStage("success");
-  }, [isConfirmed, receipt, address]);
+    void refetchSupply();
+  }, [isConfirmed, receipt, address, refetchSupply]);
 
   const setQtySafe = (n: number) => {
     const next = Math.max(1, Math.min(SITE.maxPerTx, n));
@@ -248,20 +225,10 @@ export function RitualOverlay({
             <div className="ritual-stage-tag" id="ritualStageTag">
               {STAGE_LABEL[stage]}
             </div>
-            <button
-              className="ritual-close"
-              id="ritualClose"
-              onClick={close}
-              aria-label="Close summoning"
-            >
-              ×
-            </button>
+            <button className="ritual-close" id="ritualClose" onClick={close} aria-label="Close summoning">×</button>
           </div>
 
-          <section
-            className={`ritual-view ritual-config ${stage === "config" ? "active" : ""}`}
-            id="viewConfig"
-          >
+          <section className={`ritual-view ritual-config ${stage === "config" ? "active" : ""}`} id="viewConfig">
             <div className="ritual-visual">
               <img src={ASSETS.sealedVessel} alt="Sealed Vessel" />
             </div>
@@ -269,40 +236,19 @@ export function RitualOverlay({
               <div className="eyebrow">THE SUMMONING // TESTNET</div>
               <h2>Call a Vessel.</h2>
               <p>
-                Something beyond the Gate is listening. Summon up to {SITE.maxPerTx}
-                Vessels per transaction and up to {SITE.maxMintPerWallet} per wallet.
-                Their final identities remain sealed until reveal.
+                Something beyond the Gate is listening. Summon up to {SITE.maxPerTx} Vessels per transaction
+                and up to {SITE.maxMintPerWallet} per wallet. Their final identities remain sealed until reveal.
               </p>
 
               <div className="ritual-qty-wrap">
                 <div className="ritual-label">Select how many will answer</div>
                 <div className="summon-counter">
-                  <button
-                    className="counter-btn"
-                    id="qtyMinus"
-                    aria-label="Decrease quantity"
-                    disabled={qty <= 1 || isPending || isConfirming}
-                    onClick={() => setQtySafe(qty - 1)}
-                  >
-                    −
-                  </button>
+                  <button className="counter-btn" id="qtyMinus" aria-label="Decrease quantity" disabled={qty <= 1 || isPending || isConfirming} onClick={() => setQtySafe(qty - 1)}>−</button>
                   <div className="counter-center">
-                    <div className="counter-value" id="ritualQty" ref={qtyElRef}>
-                      {qty}
-                    </div>
-                    <div className="counter-caption">
-                      {plural ? "VESSELS" : "VESSEL"}
-                    </div>
+                    <div className="counter-value" id="ritualQty" ref={qtyElRef}>{qty}</div>
+                    <div className="counter-caption">{plural ? "VESSELS" : "VESSEL"}</div>
                   </div>
-                  <button
-                    className="counter-btn"
-                    id="qtyPlus"
-                    aria-label="Increase quantity"
-                    disabled={qty >= SITE.maxPerTx || isPending || isConfirming}
-                    onClick={() => setQtySafe(qty + 1)}
-                  >
-                    +
-                  </button>
+                  <button className="counter-btn" id="qtyPlus" aria-label="Increase quantity" disabled={qty >= SITE.maxPerTx || isPending || isConfirming} onClick={() => setQtySafe(qty + 1)}>+</button>
                 </div>
                 <div className="counter-meta">
                   <span>MIN / 1</span>
@@ -311,180 +257,76 @@ export function RitualOverlay({
               </div>
 
               <div className="ritual-data">
+                <div className="ritual-row"><span>Summoning Cost</span><span id="sumCost">{cost} ETH</span></div>
+                <div className="ritual-row"><span>Network</span><span>Robinhood Testnet</span></div>
+                <div className="ritual-row"><span>Reveal State</span><span>SEALED</span></div>
                 <div className="ritual-row">
-                  <span>Summoning Cost</span>
-                  <span id="sumCost">{cost} ETH</span>
-                </div>
-                <div className="ritual-row">
-                  <span>Network</span>
-                  <span>Robinhood Testnet</span>
-                </div>
-                <div className="ritual-row">
-                  <span>Reveal State</span>
-                  <span>SEALED</span>
-                </div>
-                <div className="ritual-row">
-                  <span>Vessels Remaining</span>
-                  <span>
-                    {remaining === null ? "—" : remaining.toLocaleString()} / {SITE.supply.toLocaleString()}
-                  </span>
+                  <span>Vessels Summoned</span>
+                  <span>{minted === null ? "—" : minted.toLocaleString()} / {SITE.supply.toLocaleString()}</span>
                 </div>
               </div>
 
               {txError && <div className="ritual-error">{txError}</div>}
 
               <div className="ritual-actions">
-                <button className="btn" id="ritualCancel" onClick={close}>
-                  Cancel
-                </button>
-                <button
-                  className="btn primary"
-                  id="ritualBegin"
-                  onClick={begin}
-                  disabled={isPending || isConfirming || remaining === 0}
-                >
+                <button className="btn" id="ritualCancel" onClick={close}>Cancel</button>
+                <button className="btn primary" id="ritualBegin" onClick={begin} disabled={isPending || isConfirming || remaining === 0}>
                   {isPending ? "Awaiting Signature" : "Begin the Rite"}
                 </button>
               </div>
             </div>
           </section>
 
-          <section
-            className={`ritual-view ritual-await ${stage === "signature" ? "active" : ""}`}
-            id="viewSignature"
-          >
+          <section className={`ritual-view ritual-await ${stage === "signature" ? "active" : ""}`} id="viewSignature">
             <div className="ritual-await-inner">
-              <div className="await-art">
-                <img src={ASSETS.sealedVessel} alt="Sealed Vessel" />
-              </div>
+              <div className="await-art"><img src={ASSETS.sealedVessel} alt="Sealed Vessel" /></div>
               <div className="eyebrow">THE RITE AWAITS YOUR SIGNATURE</div>
               <h2 className="await-head">Awaiting Wallet.</h2>
-              <p className="await-copy">
-                Confirm the transaction in your wallet. This testnet transaction
-                will continue automatically after it is submitted.
-              </p>
+              <p className="await-copy">Confirm the transaction in your wallet. This testnet transaction will continue automatically after it is submitted.</p>
               <div className="await-status">
-                <div>
-                  <span className="live">SIGNATURE REQUEST</span>
-                  <span className="live">WAITING</span>
-                </div>
-                <div>
-                  <span className="muted">TRANSACTION SUBMITTED</span>
-                  <span className="muted">WAITING</span>
-                </div>
-                <div>
-                  <span className="muted">CONFIRMATION</span>
-                  <span className="muted">WAITING</span>
-                </div>
+                <div><span className="live">SIGNATURE REQUEST</span><span className="live">WAITING</span></div>
+                <div><span className="muted">TRANSACTION SUBMITTED</span><span className="muted">WAITING</span></div>
+                <div><span className="muted">CONFIRMATION</span><span className="muted">WAITING</span></div>
               </div>
-              <div className="ritual-actions">
-                <button className="btn" onClick={close}>
-                  Close
-                </button>
-              </div>
+              <div className="ritual-actions"><button className="btn" onClick={close}>Close</button></div>
             </div>
           </section>
 
-          <section
-            className={`ritual-view ritual-await ${stage === "chain" ? "active" : ""}`}
-            id="viewChain"
-          >
+          <section className={`ritual-view ritual-await ${stage === "chain" ? "active" : ""}`} id="viewChain">
             <div className="ritual-await-inner">
-              <div className="await-art">
-                <img src={ASSETS.riteCore} alt="Rite Core" />
-              </div>
+              <div className="await-art"><img src={ASSETS.riteCore} alt="Rite Core" /></div>
               <div className="eyebrow">AWAITING THE CHAIN</div>
               <h2 className="await-head">A Vessel is answering.</h2>
-              <p className="await-copy">
-                The transaction has been submitted to Robinhood Testnet. The page
-                will advance automatically after confirmation.
-              </p>
+              <p className="await-copy">The transaction has been submitted to Robinhood Testnet. The page will advance automatically after confirmation.</p>
               <div className="await-status">
-                <div>
-                  <span className="done">SIGNATURE ACCEPTED</span>
-                  <span className="done">DONE</span>
-                </div>
-                <div>
-                  <span className="done">TRANSACTION SUBMITTED</span>
-                  <span className="done">DONE</span>
-                </div>
-                <div>
-                  <span className={isConfirmed ? "done" : "live"}>CONFIRMATION</span>
-                  <span className={isConfirmed ? "done" : "live"}>
-                    {isConfirmed ? "DONE" : isConfirming ? "CONFIRMING" : "PENDING"}
-                  </span>
-                </div>
+                <div><span className="done">SIGNATURE ACCEPTED</span><span className="done">DONE</span></div>
+                <div><span className="done">TRANSACTION SUBMITTED</span><span className="done">DONE</span></div>
+                <div><span className={isConfirmed ? "done" : "live"}>CONFIRMATION</span><span className={isConfirmed ? "done" : "live"}>{isConfirmed ? "DONE" : isConfirming ? "CONFIRMING" : "PENDING"}</span></div>
               </div>
-              {hash && (
-                <a
-                  className="btn"
-                  href={`https://explorer.testnet.chain.robinhood.com/tx/${hash}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  View Transaction
-                </a>
-              )}
+              {hash && <a className="btn" href={`https://explorer.testnet.chain.robinhood.com/tx/${hash}`} target="_blank" rel="noreferrer">View Transaction</a>}
             </div>
           </section>
 
-          <section
-            className={`ritual-view ritual-success ${stage === "success" ? "active" : ""}`}
-            id="viewSuccess"
-          >
-            <div className="success-visual">
-              <img src={ASSETS.sealedVessel} alt="Sealed Vessel" />
-            </div>
+          <section className={`ritual-view ritual-success ${stage === "success" ? "active" : ""}`} id="viewSuccess">
+            <div className="success-visual"><img src={ASSETS.sealedVessel} alt="Sealed Vessel" /></div>
             <div className="success-copy">
               <div className="eyebrow">THE SUMMONING // COMPLETE</div>
               <h2 id="successHeading">{successHeading}</h2>
               <p id="successCopy">{successCopy}</p>
-              <div className="badge-live">
-                <i></i>
-                <span>IDENTITY // SEALED</span>
-              </div>
-
+              <div className="badge-live"><i></i><span>IDENTITY // SEALED</span></div>
               <div className="success-card">
                 <div className="ritual-row">
                   <span>{ids.length > 1 ? "Vessel IDs" : "Vessel ID"}</span>
-                  <span id="successIds">
-                    {ids.length > 0
-                      ? ids.map((id) => <span key={id} style={{ display: "block" }}>{id}</span>)
-                      : "CONFIRMED ONCHAIN"}
-                  </span>
+                  <span id="successIds">{ids.length > 0 ? ids.map((id) => <span key={id} style={{ display: "block" }}>{id}</span>) : "CONFIRMED ONCHAIN"}</span>
                 </div>
-                <div className="ritual-row">
-                  <span>Reveal State</span>
-                  <span>SEALED</span>
-                </div>
-                <div className="ritual-row">
-                  <span>Network</span>
-                  <span>Robinhood Testnet</span>
-                </div>
-                <div className="ritual-row">
-                  <span>Gate State</span>
-                  <span>SEALED</span>
-                </div>
+                <div className="ritual-row"><span>Assembly</span><span>{minted === null ? "—" : minted.toLocaleString()} / {SITE.supply.toLocaleString()}</span></div>
+                <div className="ritual-row"><span>Reveal State</span><span>SEALED</span></div>
+                <div className="ritual-row"><span>Network</span><span>Robinhood Testnet</span></div>
+                <div className="ritual-row"><span>Gate State</span><span>SEALED</span></div>
               </div>
-
               <div className="success-actions">
-                <button className="btn" id="returnAssembly" onClick={close}>
-                  Return to the Assembly
-                </button>
-                {hash ? (
-                  <a
-                    className="btn primary"
-                    href={`https://explorer.testnet.chain.robinhood.com/tx/${hash}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    View on Explorer
-                  </a>
-                ) : (
-                  <button className="btn primary" onClick={close}>
-                    View Your Vessel
-                  </button>
-                )}
+                <button className="btn" id="returnAssembly" onClick={close}>Return to the Assembly</button>
+                <button className="btn primary" id="viewVesselBtn" onClick={close}>View Your Vessel</button>
               </div>
             </div>
           </section>
