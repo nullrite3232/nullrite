@@ -1,5 +1,9 @@
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
-import { defineChain } from "@reown/appkit/networks";
+import {
+  type AppKitNetwork,
+  defineChain,
+} from "@reown/appkit/networks";
+import { createAppKit } from "@reown/appkit/react";
 
 const LEGACY_PLACEHOLDER = "your_walletconnect_project_id_here";
 const rawProjectId =
@@ -10,9 +14,9 @@ const rawProjectId =
 export const reownConfigured =
   rawProjectId.length >= 24 && rawProjectId !== LEGACY_PLACEHOLDER;
 
-// AppKit requires a projectId at initialization time. This fallback keeps the
-// injected-wallet path renderable while the real Reown Cloud ID is being added
-// to Vercel. Mobile WalletConnect handoff requires a real project ID.
+// A real Reown Project ID is required for production mobile WalletConnect
+// handoff. The fallback only keeps the pre-launch UI buildable while that
+// public Project ID is added in Vercel.
 export const projectId = reownConfigured
   ? rawProjectId
   : "00000000000000000000000000000000";
@@ -40,7 +44,10 @@ export const robinhoodNetwork = defineChain({
   },
 });
 
-export const appKitNetworks = [robinhoodNetwork] as [typeof robinhoodNetwork];
+export const appKitNetworks = [robinhoodNetwork] as [
+  AppKitNetwork,
+  ...AppKitNetwork[],
+];
 
 export const wagmiAdapter = new WagmiAdapter({
   networks: appKitNetworks,
@@ -56,3 +63,25 @@ export const appKitMetadata = {
     "https://res.cloudinary.com/ugbfexbl/image/upload/v1787805854/rite-core.png",
   ],
 };
+
+export const appKit = createAppKit({
+  adapters: [wagmiAdapter],
+  networks: appKitNetworks,
+  defaultNetwork: robinhoodNetwork,
+  metadata: appKitMetadata,
+  projectId,
+  themeMode: "dark",
+  themeVariables: {
+    "--apkt-font-family": "Inter, sans-serif",
+    "--apkt-accent": "#70ff95",
+    "--apkt-color-mix": "#17101f",
+    "--apkt-color-mix-strength": 18,
+    "--apkt-border-radius-master": "2px",
+    "--apkt-z-index": 9999,
+  },
+  features: {
+    analytics: false,
+    email: false,
+    socials: [],
+  },
+});
