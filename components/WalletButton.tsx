@@ -1,30 +1,22 @@
 "use client";
 
-import { useAppKit } from "@reown/appkit/react";
 import { useAccount } from "wagmi";
+import { useWalletModal } from "@/components/WalletModal";
 
 export function WalletButton() {
   const { address, isConnected } = useAccount();
-  const { open } = useAppKit();
+  const { openWalletModal } = useWalletModal();
 
   if (isConnected && address) {
-    const short = `${address.slice(0, 6)}…${address.slice(-4)}`;
     return (
-      <button
-        className="wallet"
-        onClick={() => void open({ view: "Account" })}
-        title="Wallet account"
-      >
-        {short}
+      <button className="wallet" onClick={openWalletModal} title="Wallet account">
+        {`${address.slice(0, 6)}…${address.slice(-4)}`}
       </button>
     );
   }
 
   return (
-    <button
-      className="wallet"
-      onClick={() => void open({ view: "Connect" })}
-    >
+    <button className="wallet" onClick={openWalletModal}>
       Connect Wallet
     </button>
   );
