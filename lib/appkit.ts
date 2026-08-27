@@ -14,9 +14,9 @@ const rawProjectId =
 export const reownConfigured =
   rawProjectId.length >= 24 && rawProjectId !== LEGACY_PLACEHOLDER;
 
-// A real Reown Project ID is required for production mobile WalletConnect
-// handoff. The fallback only keeps the pre-launch UI buildable while that
-// public Project ID is added in Vercel.
+// AppKit needs a projectId at initialization. This non-secret fallback only
+// keeps the pre-launch interface renderable until the real Reown Project ID is
+// configured in Vercel. WalletConnect/mobile handoff requires the real ID.
 export const projectId = reownConfigured
   ? rawProjectId
   : "00000000000000000000000000000000";
@@ -78,6 +78,18 @@ export const appKit = createAppKit({
     "--apkt-color-mix-strength": 18,
     "--apkt-border-radius-master": "2px",
     "--apkt-z-index": 9999,
+  },
+  enableBaseAccount: false,
+  enableCoinbase: false,
+  enableEIP6963: true,
+  enableInjected: true,
+  enableReconnect: true,
+  enableNetworkSwitch: false,
+  allowUnsupportedChain: true,
+  experimental_preferUniversalLinks: true,
+  enableMobileFullScreen: true,
+  defaultAccountTypes: {
+    eip155: "eoa",
   },
   features: {
     analytics: false,
