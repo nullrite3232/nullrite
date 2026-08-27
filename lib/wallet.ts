@@ -1,6 +1,7 @@
 import { createConfig } from "wagmi";
 import { createConnector, injected } from "@wagmi/core";
 import { defineChain, getAddress, http, numberToHex } from "viem";
+import { RH_CHAIN, RH_TESTNET_CHAIN } from "@/lib/chain";
 import { RUNTIME } from "@/lib/runtime";
 
 const rawProjectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID?.trim() ?? "";
@@ -168,8 +169,11 @@ if (walletConnectConfigured) {
 export const wagmiConfig = createConfig({
   chains: [robinhoodChain],
   connectors,
+  // robinhoodChain is a runtime union at type-check time, so provide both
+  // transport keys. Only the selected runtime chain is exposed in chains[].
   transports: {
-    [robinhoodChain.id]: http(robinhoodChain.rpcUrls.default.http[0]),
+    [RH_CHAIN.id]: http(RH_CHAIN.rpcUrls.default.http[0]),
+    [RH_TESTNET_CHAIN.id]: http(RH_TESTNET_CHAIN.rpcUrls.default.http[0]),
   },
   multiInjectedProviderDiscovery: true,
   ssr: true,
