@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   useAccount,
   useChainId,
+  useReadContract,
   useSwitchChain,
-  useWriteContract,
   useWaitForTransactionReceipt,
+  useWriteContract,
 } from "wagmi";
-import { parseEther } from "viem";
+import { parseEther, parseEventLogs, zeroAddress } from "viem";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { RH_TESTNET_CHAIN } from "@/lib/chain";
-import { SITE } from "@/lib/siteConfig";
-import { ASSETS } from "@/lib/siteConfig";
+import { ASSETS, SITE } from "@/lib/siteConfig";
 
 const MINT_ABI = [
   {
@@ -21,6 +21,29 @@ const MINT_ABI = [
     stateMutability: "payable",
     inputs: [{ name: "quantity", type: "uint256" }],
     outputs: [],
+  },
+] as const;
+
+const SUPPLY_ABI = [
+  {
+    type: "function",
+    name: "totalSupply",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+] as const;
+
+const TRANSFER_ABI = [
+  {
+    type: "event",
+    name: "Transfer",
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: "from", type: "address" },
+      { indexed: true, name: "to", type: "address" },
+      { indexed: true, name: "tokenId", type: "uint256" },
+    ],
   },
 ] as const;
 
@@ -33,6 +56,21 @@ const STAGE_LABEL: Record<Stage, string> = {
   success: "VESSEL ANSWERED",
 };
 
+function friendlyTxError(message?: string) {
+  if (!message) return "Transaction failed.";
+  const lower = message.toLowerCase();
+  if (lower.includes("user rejected") || lower.includes("user denied")) {
+    return "The transaction was rejected in the wallet.";
+  }
+  if (lower.includes("insufficient funds")) {
+    return "Insufficient testnet ETH for this summoning.";
+  }
+  if (lower.includes("exceeds") || lower.includes("max")) {
+    return "The contract rejected this quantity. Check the per-wallet or per-summoning limit.";
+  }
+  return message.split("\n")[0] || "Transaction failed.";
+}
+
 export function RitualOverlay({
   open,
   onClose,
@@ -40,22 +78,40 @@ export function RitualOverlay({
   open: boolean;
   onClose: () => void;
 }) {
-  const { isConnected } = useAccount();
+  const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { openConnectModal } = useConnectModal() ?? {};
-  const { switchChain } = useSwitchChain();
-  const { writeContract, data: hash, isPending, error, reset } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({ hash });
+  const { switchChainAsync } = useSwitchChain();
+  const {
+    writeContractAsync,
+    data: hash,
+    isPending,
+    error: writeError,
+    reset,
+  } = useWriteContract();
+  const {
+    data: receipt,
+    isLoading: isConfirming,
+    isSuccess: isConfirmed,
+    error: receiptError,
+  } = useWaitForTransactionReceipt({ hash });
+
+  const { data: totalSupply } = useReadContract({
+    address: SITE.contractAddress as `0x${string}`,
+    abi: SUPPLY_ABI,
+    functionName: "totalSupply",
+    chainId: RH_TESTNET_CHAIN.id,
+    query: {
+      enabled: open && Boolean(SITE.contractAddress),
+      refetchInterval: 8_000,
+    },
+  });
 
   const [stage, setStage] = useState<Stage>("config");
   const [qty, setQty] = useState(1);
   const [ids, setIds] = useState<string[]>([]);
   const [txError, setTxError] = useState<string | null>(null);
   const qtyElRef = useRef<HTMLDivElement>(null);
-
-  // v15: vesselBase starts at 1847, advances by a random 1..7 each summoning.
-  const vesselBaseRef = useRef(1847);
 
   useEffect(() => {
     if (open) {
@@ -67,27 +123,68 @@ export function RitualOverlay({
     }
   }, [open, reset]);
 
-  // Format with enough decimals for sub-cent prices (contract: 0.0001 ETH)
-  const fmtEth = (n: number) => Number(n.toFixed(4)).toString();
-  const cost = fmtEth(SITE.mintPriceEth * qty);
+  const cost = useMemo(() => {
+    const value = SITE.mintPriceEth * qty;
+    return Number(value.toFixed(4)).toString();
+  }, [qty]);
+
+  const remaining =
+    typeof totalSupply === "bigint"
+      ? Math.max(0, SITE.supply - Number(totalSupply))
+      : null;
 
   useEffect(() => {
     if (hash) setStage("chain");
   }, [hash]);
 
   useEffect(() => {
-    if (isConfirmed) {
-      vesselBaseRef.current += Math.floor(Math.random() * 7) + 1;
-      const base = vesselBaseRef.current;
-      setIds(Array.from({ length: qty }, (_, i) => `VESSEL #${base + i}`));
-      setStage("success");
+    if (writeError && !hash) {
+      setTxError(friendlyTxError(writeError.message));
+      setStage("config");
     }
-  }, [isConfirmed, qty]);
+  }, [writeError, hash]);
+
+  useEffect(() => {
+    if (receiptError) {
+      setTxError(friendlyTxError(receiptError.message));
+      setStage("config");
+    }
+  }, [receiptError]);
+
+  useEffect(() => {
+    if (!isConfirmed || !receipt) return;
+
+    let mintedIds: string[] = [];
+    try {
+      const transfers = parseEventLogs({
+        abi: TRANSFER_ABI,
+        logs: receipt.logs,
+        eventName: "Transfer",
+        strict: false,
+      });
+
+      mintedIds = transfers
+        .filter((event) => {
+          const from = event.args.from?.toLowerCase();
+          const to = event.args.to?.toLowerCase();
+          return (
+            from === zeroAddress.toLowerCase() &&
+            (!address || to === address.toLowerCase())
+          );
+        })
+        .map((event) => `VESSEL #${event.args.tokenId?.toString()}`)
+        .filter((value) => !value.endsWith("undefined"));
+    } catch {
+      mintedIds = [];
+    }
+
+    setIds(mintedIds);
+    setStage("success");
+  }, [isConfirmed, receipt, address]);
 
   const setQtySafe = (n: number) => {
     const next = Math.max(1, Math.min(SITE.maxPerTx, n));
     setQty(next);
-    // v15 counter pop animation (Web Animations API)
     const el = qtyElRef.current;
     if (el && typeof el.animate === "function") {
       el.animate(
@@ -100,52 +197,37 @@ export function RitualOverlay({
     }
   };
 
-  const begin = () => {
+  const begin = async () => {
     setTxError(null);
+
     if (!isConnected) {
       openConnectModal?.();
       return;
     }
-    if (chainId !== RH_TESTNET_CHAIN.id) {
-      try {
-        switchChain({ chainId: RH_TESTNET_CHAIN.id });
-      } catch {
-        /* user may need to approve network switch */
-      }
-    }
-    setStage("signature");
+
     try {
-      writeContract({
+      if (chainId !== RH_TESTNET_CHAIN.id) {
+        await switchChainAsync({ chainId: RH_TESTNET_CHAIN.id });
+      }
+
+      setStage("signature");
+      await writeContractAsync({
         address: SITE.contractAddress as `0x${string}`,
         abi: MINT_ABI,
         functionName: "mint",
         args: [BigInt(qty)],
         value: parseEther(cost),
+        chainId: RH_TESTNET_CHAIN.id,
       });
-    } catch (e: any) {
-      setTxError(e?.message ?? "Transaction failed");
+    } catch (error: any) {
+      setTxError(friendlyTxError(error?.shortMessage ?? error?.message));
       setStage("config");
     }
-  };
-
-  const proceedSignature = () => {
-    if (hash || isPending) {
-      setStage("chain");
-    } else {
-      begin(); // wallet flow still pending → re-trigger signature request
-    }
-  };
-
-  const proceedChain = () => {
-    if (isConfirmed) setStage("success");
-    // v15 prototype button kept for parity; without a real confirmation it stays put.
   };
 
   const close = () => {
     onClose();
-    setTimeout(() => {
-      setStage("config");
-    }, 180);
+    setTimeout(() => setStage("config"), 180);
   };
 
   if (!open) return null;
@@ -157,8 +239,6 @@ export function RitualOverlay({
   const successCopy = plural
     ? "Their final forms remain sealed. The Reveal event will expose each born identity, traits, and rarity later."
     : "Its final form remains sealed. The Reveal event will expose its born identity, traits, and rarity later.";
-  const successIdLabel = plural ? "Vessel IDs" : "Vessel ID";
-  const successIdsHtml = ids.join("<br>");
 
   return (
     <div className="ritual-overlay show" id="ritualOverlay">
@@ -178,7 +258,6 @@ export function RitualOverlay({
             </button>
           </div>
 
-          {/* CONFIG */}
           <section
             className={`ritual-view ritual-config ${stage === "config" ? "active" : ""}`}
             id="viewConfig"
@@ -187,13 +266,14 @@ export function RitualOverlay({
               <img src={ASSETS.sealedVessel} alt="Sealed Vessel" />
             </div>
             <div className="ritual-copy">
-              <div className="eyebrow">THE SUMMONING</div>
+              <div className="eyebrow">THE SUMMONING // TESTNET</div>
               <h2>Call a Vessel.</h2>
               <p>
-                Something beyond the Gate is listening. Select how many Vessels
-                will answer. Up to 10 may be summoned per wallet. Their final
-                identities remain sealed until reveal.
+                Something beyond the Gate is listening. Summon up to {SITE.maxPerTx}
+                Vessels per transaction and up to {SITE.maxMintPerWallet} per wallet.
+                Their final identities remain sealed until reveal.
               </p>
+
               <div className="ritual-qty-wrap">
                 <div className="ritual-label">Select how many will answer</div>
                 <div className="summon-counter">
@@ -201,7 +281,7 @@ export function RitualOverlay({
                     className="counter-btn"
                     id="qtyMinus"
                     aria-label="Decrease quantity"
-                    disabled={qty <= 1}
+                    disabled={qty <= 1 || isPending || isConfirming}
                     onClick={() => setQtySafe(qty - 1)}
                   >
                     −
@@ -218,7 +298,7 @@ export function RitualOverlay({
                     className="counter-btn"
                     id="qtyPlus"
                     aria-label="Increase quantity"
-                    disabled={qty >= SITE.maxPerTx}
+                    disabled={qty >= SITE.maxPerTx || isPending || isConfirming}
                     onClick={() => setQtySafe(qty + 1)}
                   >
                     +
@@ -229,6 +309,7 @@ export function RitualOverlay({
                   <span>MAX / {SITE.maxPerTx} PER SUMMONING</span>
                 </div>
               </div>
+
               <div className="ritual-data">
                 <div className="ritual-row">
                   <span>Summoning Cost</span>
@@ -236,7 +317,7 @@ export function RitualOverlay({
                 </div>
                 <div className="ritual-row">
                   <span>Network</span>
-                  <span>Robinhood Chain</span>
+                  <span>Robinhood Testnet</span>
                 </div>
                 <div className="ritual-row">
                   <span>Reveal State</span>
@@ -244,22 +325,30 @@ export function RitualOverlay({
                 </div>
                 <div className="ritual-row">
                   <span>Vessels Remaining</span>
-                  <span>3,232 / 3,232</span>
+                  <span>
+                    {remaining === null ? "—" : remaining.toLocaleString()} / {SITE.supply.toLocaleString()}
+                  </span>
                 </div>
               </div>
+
               {txError && <div className="ritual-error">{txError}</div>}
+
               <div className="ritual-actions">
                 <button className="btn" id="ritualCancel" onClick={close}>
                   Cancel
                 </button>
-                <button className="btn primary" id="ritualBegin" onClick={begin}>
-                  Begin the Rite
+                <button
+                  className="btn primary"
+                  id="ritualBegin"
+                  onClick={begin}
+                  disabled={isPending || isConfirming || remaining === 0}
+                >
+                  {isPending ? "Awaiting Signature" : "Begin the Rite"}
                 </button>
               </div>
             </div>
           </section>
 
-          {/* SIGNATURE */}
           <section
             className={`ritual-view ritual-await ${stage === "signature" ? "active" : ""}`}
             id="viewSignature"
@@ -271,17 +360,13 @@ export function RitualOverlay({
               <div className="eyebrow">THE RITE AWAITS YOUR SIGNATURE</div>
               <h2 className="await-head">Awaiting Wallet.</h2>
               <p className="await-copy">
-                Confirm the transaction in your wallet to call a Vessel through
-                the Gate.
+                Confirm the transaction in your wallet. This testnet transaction
+                will continue automatically after it is submitted.
               </p>
               <div className="await-status">
                 <div>
-                  <span className={isPending ? "live" : "muted"}>
-                    SIGNATURE REQUEST
-                  </span>
-                  <span className={isPending ? "live" : "muted"}>
-                    {isPending ? "SIGNING" : "WAITING"}
-                  </span>
+                  <span className="live">SIGNATURE REQUEST</span>
+                  <span className="live">WAITING</span>
                 </div>
                 <div>
                   <span className="muted">TRANSACTION SUBMITTED</span>
@@ -293,25 +378,13 @@ export function RitualOverlay({
                 </div>
               </div>
               <div className="ritual-actions">
-                <button
-                  className="btn"
-                  id="signatureBack"
-                  onClick={() => setStage("config")}
-                >
-                  Simulate Rejected
-                </button>
-                <button
-                  className="btn primary"
-                  id="signatureProceed"
-                  onClick={proceedSignature}
-                >
-                  Signature Accepted
+                <button className="btn" onClick={close}>
+                  Close
                 </button>
               </div>
             </div>
           </section>
 
-          {/* CHAIN */}
           <section
             className={`ritual-view ritual-await ${stage === "chain" ? "active" : ""}`}
             id="viewChain"
@@ -323,8 +396,8 @@ export function RitualOverlay({
               <div className="eyebrow">AWAITING THE CHAIN</div>
               <h2 className="await-head">A Vessel is answering.</h2>
               <p className="await-copy">
-                The transaction has been submitted. The Gate is listening, and
-                the final identity remains hidden until reveal.
+                The transaction has been submitted to Robinhood Testnet. The page
+                will advance automatically after confirmation.
               </p>
               <div className="await-status">
                 <div>
@@ -332,45 +405,29 @@ export function RitualOverlay({
                   <span className="done">DONE</span>
                 </div>
                 <div>
-                  <span className="live">TRANSACTION SUBMITTED</span>
-                  <span className={isConfirmed ? "done" : "live"}>
-                    {isConfirmed ? "DONE" : "LIVE"}
-                  </span>
+                  <span className="done">TRANSACTION SUBMITTED</span>
+                  <span className="done">DONE</span>
                 </div>
                 <div>
-                  <span
-                    className={
-                      isConfirmed ? "done" : isConfirming ? "live" : "muted"
-                    }
-                  >
-                    CONFIRMATION
-                  </span>
-                  <span
-                    className={
-                      isConfirmed ? "done" : isConfirming ? "live" : "muted"
-                    }
-                  >
-                    {isConfirmed
-                      ? "DONE"
-                      : isConfirming
-                        ? "CONFIRMING"
-                        : "PENDING"}
+                  <span className={isConfirmed ? "done" : "live"}>CONFIRMATION</span>
+                  <span className={isConfirmed ? "done" : "live"}>
+                    {isConfirmed ? "DONE" : isConfirming ? "CONFIRMING" : "PENDING"}
                   </span>
                 </div>
               </div>
-              <div className="ritual-actions">
-                <button
-                  className="btn primary"
-                  id="chainProceed"
-                  onClick={proceedChain}
+              {hash && (
+                <a
+                  className="btn"
+                  href={`https://explorer.testnet.chain.robinhood.com/tx/${hash}`}
+                  target="_blank"
+                  rel="noreferrer"
                 >
-                  Simulate Confirmed
-                </button>
-              </div>
+                  View Transaction
+                </a>
+              )}
             </div>
           </section>
 
-          {/* SUCCESS */}
           <section
             className={`ritual-view ritual-success ${stage === "success" ? "active" : ""}`}
             id="viewSuccess"
@@ -386,13 +443,15 @@ export function RitualOverlay({
                 <i></i>
                 <span>IDENTITY // SEALED</span>
               </div>
+
               <div className="success-card">
                 <div className="ritual-row">
-                  <span id="successIdLabel">{successIdLabel}</span>
-                  <span
-                    id="successIds"
-                    dangerouslySetInnerHTML={{ __html: successIdsHtml }}
-                  />
+                  <span>{ids.length > 1 ? "Vessel IDs" : "Vessel ID"}</span>
+                  <span id="successIds">
+                    {ids.length > 0
+                      ? ids.map((id) => <span key={id} style={{ display: "block" }}>{id}</span>)
+                      : "CONFIRMED ONCHAIN"}
+                  </span>
                 </div>
                 <div className="ritual-row">
                   <span>Reveal State</span>
@@ -400,20 +459,32 @@ export function RitualOverlay({
                 </div>
                 <div className="ritual-row">
                   <span>Network</span>
-                  <span>Robinhood Chain</span>
+                  <span>Robinhood Testnet</span>
                 </div>
                 <div className="ritual-row">
                   <span>Gate State</span>
                   <span>SEALED</span>
                 </div>
               </div>
+
               <div className="success-actions">
                 <button className="btn" id="returnAssembly" onClick={close}>
                   Return to the Assembly
                 </button>
-                <button className="btn primary" id="viewVesselBtn" onClick={close}>
-                  View Your Vessel
-                </button>
+                {hash ? (
+                  <a
+                    className="btn primary"
+                    href={`https://explorer.testnet.chain.robinhood.com/tx/${hash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View on Explorer
+                  </a>
+                ) : (
+                  <button className="btn primary" onClick={close}>
+                    View Your Vessel
+                  </button>
+                )}
               </div>
             </div>
           </section>

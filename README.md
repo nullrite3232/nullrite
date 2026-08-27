@@ -1,52 +1,122 @@
-# NULL RITE — Web (Vercel-ready scaffold)
+# NULL RITE — Web
 
-Next.js (App Router) + TypeScript + wagmi/viem/RainbowKit on Robinhood Chain.
-V1 spec: MASTER CONCEPT SPEC V1 (sealed Gate, pre-reveal, static + mocked).
+Next.js 14 + TypeScript + wagmi/viem/RainbowKit for the NULL RITE website.
+
+Current phase: **Robinhood Testnet / pre-reveal / Gate sealed**.
+
+## Repository
+
+GitHub repository:
+
+```text
+nullrite3232/nullrite
+```
+
+The GitHub repository name is intentionally **nullrite**.
+
+> Note: the Vercel project may still be named `nullrite-web`. That is a separate Vercel setting and does not change the GitHub repository name.
 
 ## Stack
-- Framework: Next.js 14 (App Router)
-- Wallet: wagmi + viem + RainbowKit (custom RH Chain, chainId 4663)
-- Deploy: Vercel (free `*.vercel.app`; custom domain nullrite.xyz addable)
 
-## Local dev
+- Next.js 14 (App Router)
+- TypeScript
+- wagmi
+- viem
+- RainbowKit
+- Robinhood Testnet for the current Summoning test flow
+- Cloudinary for website media delivery
+- Vercel for deployment
+
+## Current testnet state
+
+- Supply concept: 3,232 VESSELS
+- Reveal: SEALED
+- Gate: SEALED
+- $RITE: SEALED
+- Current mint network: Robinhood Testnet (`46630`)
+- Current testnet contract limits:
+  - max 5 Vessels per transaction
+  - max 10 Vessels per wallet
+- Current testnet mint price is configured in `lib/siteConfig.ts`
+
+## Summoning flow
+
+The testnet mint interface now uses the real wallet/chain state:
+
+```text
+Configure quantity
+→ Connect wallet if needed
+→ Switch to Robinhood Testnet if needed
+→ Wallet signature
+→ Transaction submitted
+→ Wait for receipt
+→ Parse real ERC721 Transfer logs
+→ Show confirmed Vessel token IDs when available
 ```
+
+Prototype `Simulate Rejected`, `Signature Accepted`, and `Simulate Confirmed` controls are not part of the hardened testnet flow.
+
+## Local development
+
+```bash
 npm install
 npm run dev
 ```
 
-## Env (Vercel project settings → Environment Variables)
-- `NEXT_PUBLIC_NULLRITE_ADDRESS` = deployed ERC721 address (after contract ready)
-- `NEXT_PUBLIC_IPFS_GATEWAY`     = e.g. https://ipfs.io/ipfs/
+Production build:
 
-## Deploy to Vercel (free domain)
-1. Buat repo GitHub kosong, mis. `nullrite-web`.
-2. Di VPS:
-   ```
-   cd nullrite-web
-   git init
-   git add -A
-   git commit -m "scaffold"
-   git remote add origin git@github.com:<user>/nullrite-web.git
-   git push -u origin main
-   ```
-3. vercel.com → "Add New" → import repo `nullrite-web`. Framework auto-detect = Next.js.
-4. Dapet domain `nullrite-web.vercel.app`. Custom domain `nullrite.xyz` bisa di-add gratis.
-5. Isi env var → Redeploy.
+```bash
+npm run build
+```
 
-## What's built now (pre-contract, per spec §24)
-- Home (/), Mint (/mint), Collection (/collection), Gate (/gate), Docs (/docs)
-- All config centralized in lib/siteConfig.ts (supply, states, terminology)
-- Mint/collection/reveal are MOCKED until contract ready (§24)
+## Environment variables
 
-## Blocked until contract (§28 TBA)
-- Real mint tx (need contract address + ABI)
-- Live supply counter
-- Reveal metadata switch (need IPFS + reveal mechanic)
-- $RITE system
-- Live Gate engine
+Use Vercel Project Settings → Environment Variables for deployment values.
 
-## Upload / Pinata note
-- 3,232 Vessel PNGs ≈ ~5 GB total → Pinata FREE (1 GB) NOT enough → need Picnic ($20/10 GB).
-- Reveal pattern (§12): pre-mint tokenURI → Sealed placeholder; post-reveal → real metadata.
-- Sealed Vessel placeholder image must be created (§5) — not in asset folder.
-- Metadata.json (born traits) TBA — generate later.
+Example variables:
+
+```text
+NEXT_PUBLIC_WC_ID
+NEXT_PUBLIC_NULLRITE_ADDRESS
+NEXT_PUBLIC_IPFS_GATEWAY
+```
+
+Do not store private keys, seed phrases, or server-side secrets in `NEXT_PUBLIC_*` variables because they are exposed to the browser.
+
+The current testnet contract remains configured in `lib/siteConfig.ts` while the UI is being finalized. Mainnet migration should happen only after the testnet interface is approved.
+
+## Current routes
+
+The current visual build uses hash-based route panels:
+
+```text
+#/collection
+#/gate
+#/docs
+```
+
+These can later be migrated to dedicated Next.js routes without redesigning the page content.
+
+## Media
+
+Website media is delivered externally through Cloudinary rather than embedded Base64 assets. URLs are centralized in:
+
+```text
+lib/siteConfig.ts
+```
+
+## Still intentionally incomplete
+
+The following are future phases and should not be treated as live functionality yet:
+
+- mainnet Vessel mint
+- final production contract address
+- reveal metadata switch
+- final IPFS collection CID
+- live $RITE token actions
+- Gate engine
+- persistent Gate Record backend
+
+## Launch rule
+
+Do not switch the site from Robinhood Testnet to Robinhood Chain mainnet until the testnet UI, wallet flow, contract parameters, reveal flow, and production configuration have been fully approved.

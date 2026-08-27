@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * v15 EXACT port — the three distinct route pages (Collection / Gate / Docs).
- * They live hidden in the DOM; RouteRouter toggles .active / aria-hidden.
+ * NULL RITE route pages for the current testnet phase.
+ * RouteRouter controls visibility via hash navigation.
  */
 export function RoutePages() {
   return (
@@ -42,7 +42,7 @@ export function RoutePages() {
               </div>
               <div className="ritual-row">
                 <span>Network</span>
-                <span>ROBINHOOD CHAIN</span>
+                <span>ROBINHOOD TESTNET</span>
               </div>
               <div className="ritual-row">
                 <span>Artwork</span>
@@ -110,7 +110,7 @@ export function RoutePages() {
       <section className="route-page" id="docsPage" aria-hidden="true">
         <div className="route-inner">
           <div className="route-topline">
-            <div className="route-code">NULL RITE // DOCUMENTATION // V1</div>
+            <div className="route-code">NULL RITE // DOCUMENTATION // TESTNET V1</div>
             <button className="route-back" data-close-page>
               ← Return Home
             </button>
@@ -134,8 +134,8 @@ export function RoutePages() {
                 <h2>NULL RITE</h2>
                 <p>
                   NULL RITE is a collection of 3,232 Vessels on Robinhood Chain.
-                  A Vessel begins as an identity. Later phases are designed to
-                  let that identity carry a persistent history through the Gate.
+                  The current website is operating against Robinhood Testnet while
+                  the interface and mint flow are being finalized.
                 </p>
                 <p className="docs-note">
                   V1 documentation describes the launch-facing website only.
@@ -148,16 +148,20 @@ export function RoutePages() {
                     <span>3,232 VESSELS</span>
                   </div>
                   <div className="ritual-row">
-                    <span>Network</span>
-                    <span>ROBINHOOD CHAIN</span>
+                    <span>Current Network</span>
+                    <span>ROBINHOOD TESTNET</span>
                   </div>
                   <div className="ritual-row">
                     <span>Mint Currency</span>
-                    <span>ETH</span>
+                    <span>TESTNET ETH</span>
                   </div>
                   <div className="ritual-row">
-                    <span>Max Mint</span>
+                    <span>Wallet Limit</span>
                     <span>10 / WALLET</span>
+                  </div>
+                  <div className="ritual-row">
+                    <span>Per Summoning</span>
+                    <span>1–5 VESSELS</span>
                   </div>
                 </div>
               </article>
@@ -185,18 +189,23 @@ export function RoutePages() {
                 </div>
                 <h2>THE SUMMONING</h2>
                 <p>
-                  The Summoning is the mint experience. A wallet selects a
-                  quantity from 1 to 10, confirms the transaction, waits for
-                  chain confirmation, and receives one or more Vessels.
+                  The Summoning is the mint experience. The current testnet
+                  contract allows 1 to 5 Vessels per transaction, while the
+                  collection policy allows up to 10 Vessels per wallet.
                 </p>
                 <p>
-                  A successful mint means a Vessel has answered. It does not
-                  reveal the Vessel&apos;s final form immediately.
+                  After the wallet signs, the interface waits for the real chain
+                  confirmation automatically. A successful mint means a Vessel
+                  has answered; it does not reveal the final form immediately.
                 </p>
                 <div className="docs-spec">
                   <div className="ritual-row">
-                    <span>Quantity</span>
-                    <span>1–10</span>
+                    <span>Per Transaction</span>
+                    <span>1–5</span>
+                  </div>
+                  <div className="ritual-row">
+                    <span>Per Wallet</span>
+                    <span>10 MAX</span>
                   </div>
                   <div className="ritual-row">
                     <span>Success State</span>
@@ -238,8 +247,8 @@ export function RoutePages() {
                   interactions.
                 </p>
                 <p>
-                  For V1, $RITE remains a future-facing section. Live token
-                  functionality can be connected when that phase is opened.
+                  For the current testnet phase, $RITE remains sealed and no
+                  live token action is exposed by the website.
                 </p>
               </article>
 
