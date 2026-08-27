@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "contract:test": "node scripts/test-vessel.mjs",
+    "contract:deploy:testnet": "node scripts/deploy-vessel.mjs"
   },
   "dependencies": {
     "@tanstack/query-core": "5.101.4",
@@ -23,6 +25,9 @@
     "autoprefixer": "10.4.20"
   },
   "devDependencies": {
+    "@openzeppelin/contracts": "5.0.2",
+    "ganache": "7.9.2",
+    "solc": "0.8.24",
     "typescript": "5.5.4",
     "@types/react": "18.3.3",
     "@types/node": "20.14.15"

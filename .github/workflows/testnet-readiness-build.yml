@@ -17,5 +17,7 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: npm install
+      - name: VesselNFT contract tests
+        run: npm run contract:test
       - name: Build
         run: npm run build

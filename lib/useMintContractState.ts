@@ -42,6 +42,20 @@ export const VESSEL_MINT_ABI = [
     inputs: [],
     outputs: [{ name: "", type: "bool" }],
   },
+  {
+    type: "function",
+    name: "summoningStarted",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "revealed",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "bool" }],
+  },
 ] as const;
 
 type Address = `0x${string}`;
@@ -105,6 +119,18 @@ export function useMintContractState({
         functionName: "publicMintActive",
         chainId: RUNTIME.chain.id,
       },
+      {
+        address: contractAddress,
+        abi: VESSEL_MINT_ABI,
+        functionName: "summoningStarted",
+        chainId: RUNTIME.chain.id,
+      },
+      {
+        address: contractAddress,
+        abi: VESSEL_MINT_ABI,
+        functionName: "revealed",
+        chainId: RUNTIME.chain.id,
+      },
     ],
     query: {
       enabled: RUNTIME.contractConfigured && enabled,
@@ -113,7 +139,7 @@ export function useMintContractState({
   });
 
   const results = reads.data as
-    | readonly [bigint, bigint, bigint, boolean]
+    | readonly [bigint, bigint, bigint, boolean, boolean, boolean]
     | undefined;
 
   const contractStateSynced = Boolean(results) && !reads.error;
@@ -124,8 +150,10 @@ export function useMintContractState({
     Number(results?.[2] ?? BigInt(SITE.maxMintPerWallet))
   );
 
-  // Production safety rule: unknown contract state is SEALED, never OPEN.
+  // Unknown contract state is always treated as sealed.
   const publicMintActive = contractStateSynced ? Boolean(results?.[3]) : false;
+  const summoningStarted = contractStateSynced ? Boolean(results?.[4]) : false;
+  const revealed = contractStateSynced ? Boolean(results?.[5]) : false;
 
   const probeCeiling = useMemo(() => {
     if (!publicMintActive) return 0;
@@ -229,6 +257,8 @@ export function useMintContractState({
     maxPerTx,
     maxPerWallet,
     publicMintActive,
+    summoningStarted,
+    revealed,
     contractStateSynced,
     isContractStateLoading: reads.isLoading,
     contractStateError: reads.error,
