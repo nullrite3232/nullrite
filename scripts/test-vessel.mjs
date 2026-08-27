@@ -5,11 +5,11 @@ import {
   createWalletClient,
   custom,
   defineChain,
-  getAddress,
   keccak256,
   parseEther,
   toHex,
 } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import { artifact, compileContracts } from "./contract-utils.mjs";
 
 const contracts = compileContracts({ includeHarness: true });
@@ -35,10 +35,13 @@ const chain = defineChain({
 
 const transport = custom(provider);
 const publicClient = createPublicClient({ chain, transport });
-const rawAccounts = await provider.request({ method: "eth_accounts", params: [] });
-const accounts = rawAccounts.map((value) => getAddress(value));
+const initialAccounts = provider.getInitialAccounts();
+const localAccounts = Object.values(initialAccounts).map(({ secretKey }) =>
+  privateKeyToAccount(secretKey)
+);
+const accounts = localAccounts.map((account) => account.address);
 const wallet = (index) =>
-  createWalletClient({ account: accounts[index], chain, transport });
+  createWalletClient({ account: localAccounts[index], chain, transport });
 
 const owner = wallet(0);
 const user1 = wallet(1);
@@ -226,7 +229,9 @@ await expectRevert("second reveal", {
 
 let directPaymentRejected = false;
 try {
-  await user1.sendTransaction({ to: address, value: 1n });
+  const hash = await user1.sendTransaction({ to: address, value: 1n });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  directPaymentRejected = receipt.status === "reverted";
 } catch {
   directPaymentRejected = true;
 }
