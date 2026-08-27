@@ -6,7 +6,7 @@ import { useWalletModal } from "@/components/WalletModal";
 import { useRitual } from "@/components/RitualContext";
 import { ASSETS, SITE } from "@/lib/siteConfig";
 import { RUNTIME } from "@/lib/runtime";
-import { useAssemblySupply } from "@/lib/useAssemblySupply";
+import { useProtocolPhase } from "@/lib/useProtocolPhase";
 
 const OWNER_OF_ABI = [
   {
@@ -37,7 +37,16 @@ export function CollectionPage() {
   const publicClient = usePublicClient({ chainId: RUNTIME.chain.id });
   const { openWalletModal } = useWalletModal();
   const { open: openRitual } = useRitual();
-  const { minted, progress } = useAssemblySupply();
+  const phase = useProtocolPhase();
+  const {
+    minted,
+    progress,
+    summoningState,
+    revealState,
+    isSoldOut,
+    publicMintActive,
+    summoningStarted,
+  } = phase;
 
   const [mode, setMode] = useState<CollectionMode>("all");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -160,9 +169,10 @@ export function CollectionPage() {
   const displayedIds = sourceIds.slice(0, visibleCount);
   const hasMore = visibleCount < sourceIds.length;
 
-  const statusText =
-    mode === "all"
-      ? "CHAIN // LIVE ASSEMBLY"
+  const statusText = isSoldOut
+    ? "ASSEMBLY // COMPLETE"
+    : mode === "all"
+      ? `SUMMONING // ${summoningState}`
       : isConnected
         ? `WALLET // ${shortAddress(address)}`
         : "WALLET // NOT CONNECTED";
@@ -197,12 +207,22 @@ export function CollectionPage() {
         return (
           <div className="assembly-empty">
             <div>
-              <div className="eyebrow">THE ASSEMBLY // EMPTY</div>
+              <div className="eyebrow">
+                {publicMintActive ? "THE ASSEMBLY // AWAITING FIRST ANSWER" : "THE ASSEMBLY // SUMMONING PAUSED"}
+              </div>
               <h2>No Vessel has answered yet.</h2>
-              <p>The first summoned Vessel will appear here in its sealed state.</p>
-              <button className="btn primary" onClick={openRitual}>
-                Summon a Vessel
-              </button>
+              <p>
+                {publicMintActive
+                  ? "The first summoned Vessel will appear here in its sealed state."
+                  : summoningStarted
+                    ? "Public Summoning has started but is currently paused by the contract. The Assembly remains live."
+                    : "Public Summoning has not begun."}
+              </p>
+              {publicMintActive && (
+                <button className="btn primary" onClick={openRitual}>
+                  Summon a Vessel
+                </button>
+              )}
             </div>
           </div>
         );
@@ -258,9 +278,15 @@ export function CollectionPage() {
             <div className="eyebrow">MY VESSELS // NONE FOUND</div>
             <h2>No Vessel has answered you.</h2>
             <p>This wallet does not currently hold a Vessel from the Assembly.</p>
-            <button className="btn primary" onClick={openRitual}>
-              Begin the Rite
-            </button>
+            {publicMintActive && !isSoldOut ? (
+              <button className="btn primary" onClick={openRitual}>
+                Begin the Rite
+              </button>
+            ) : (
+              <button className="btn" onClick={() => setMode("all")}>
+                View the Assembly
+              </button>
+            )}
           </div>
         </div>
       );
@@ -273,7 +299,9 @@ export function CollectionPage() {
     <section className="route-page" id="collectionPage" aria-hidden="true">
       <div className="route-inner collection-route-inner">
         <div className="route-topline">
-          <div className="route-code">NULL RITE // COLLECTION // THE ASSEMBLY</div>
+          <div className="route-code">
+            NULL RITE // COLLECTION // {isSoldOut ? "ASSEMBLY COMPLETE" : "THE ASSEMBLY"}
+          </div>
           <button className="route-back" data-close-page>
             ← Return Home
           </button>
@@ -281,16 +309,26 @@ export function CollectionPage() {
 
         <div className="collection-live-head">
           <div className="collection-live-copy">
-            <div className="eyebrow">THE ASSEMBLY</div>
-            <h1 className="route-title">THE ASSEMBLY</h1>
+            <div className="eyebrow">
+              {isSoldOut ? "THE ASSEMBLY // COMPLETE" : `THE ASSEMBLY // ${summoningState}`}
+            </div>
+            <h1 className="route-title">
+              {isSoldOut ? "THE ASSEMBLY IS COMPLETE." : "THE ASSEMBLY"}
+            </h1>
             <div className="collection-live-count">
               <strong>{minted === null ? "—" : mintedCount} / {SITE.supply}</strong>
-              <span>{mintedCount === 1 ? "VESSEL HAS ANSWERED." : "VESSELS HAVE ANSWERED."}</span>
+              <span>
+                {isSoldOut
+                  ? "3232 VESSELS HAVE ANSWERED."
+                  : mintedCount === 1
+                    ? "VESSEL HAS ANSWERED."
+                    : "VESSELS HAVE ANSWERED."}
+              </span>
             </div>
             <p className="route-sub">
-              Every Vessel shown here has been summoned onchain. Until Reveal,
-              identities remain sealed; the Assembly records which Vessels exist,
-              while My Vessels isolates the ones held by the connected wallet.
+              {isSoldOut
+                ? `Public Summoning is complete. Every Vessel identity is recorded onchain. The Assembly remains available while The Reveal is ${revealState.toLowerCase()}.`
+                : "Every Vessel shown here has been summoned onchain. Until Reveal, identities remain sealed; the Assembly records which Vessels exist, while My Vessels isolates the ones held by the connected wallet."}
             </p>
           </div>
 
@@ -303,11 +341,22 @@ export function CollectionPage() {
               <i style={{ width: `${progress}%` }} />
             </div>
             <div className="collection-meter-meta">
-              <div><span>Reveal</span><strong>SEALED</strong></div>
-              <div><span>Artwork</span><strong>WITHHELD</strong></div>
+              <div><span>Summoning</span><strong>{summoningState}</strong></div>
+              <div><span>Reveal</span><strong>{revealState}</strong></div>
             </div>
           </div>
         </div>
+
+        {isSoldOut && (
+          <div className="actions" style={{ justifyContent: "center", marginBottom: 28 }}>
+            <button className="btn primary" onClick={() => setMode("all")}>
+              View the Assembly
+            </button>
+            <button className="btn" type="button" disabled={revealState !== "REVEALED"}>
+              {revealState === "REVEALED" ? "The Reveal Is Live" : "Await the Reveal"}
+            </button>
+          </div>
+        )}
 
         <div className="collection-toolbar">
           <div className="collection-tabs" role="tablist" aria-label="Collection view">

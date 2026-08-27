@@ -60,6 +60,18 @@ export function RouteRouter() {
       }
     };
 
+    const openCollectionMode = (mode: "all" | "mine") => {
+      history.replaceState(
+        null,
+        "",
+        location.pathname + location.search + "#/collection"
+      );
+      openRoutePage("collection", false);
+      window.dispatchEvent(
+        new CustomEvent("nullrite:collection-mode", { detail: mode })
+      );
+    };
+
     const onNavClick = (e: Event) => {
       const link = e.currentTarget as HTMLElement;
       const target = link.dataset.nav;
@@ -90,6 +102,21 @@ export function RouteRouter() {
     const onCloseClick = () => closeRoutePage(true);
     closeButtons.forEach((btn) => btn.addEventListener("click", onCloseClick));
 
+    // RitualOverlay mounts dynamically. Delegate post-mint actions so the
+    // confirmed Vessel appears in the correct Collection tab after close.
+    const onDelegatedClick = (event: MouseEvent) => {
+      const target = event.target as Element | null;
+      if (!target) return;
+
+      if (target.closest("#returnAssembly")) {
+        setTimeout(() => openCollectionMode("all"), 0);
+      }
+      if (target.closest("#viewVesselBtn")) {
+        setTimeout(() => openCollectionMode("mine"), 0);
+      }
+    };
+    document.addEventListener("click", onDelegatedClick);
+
     // Reuse the current Gate video inside the dedicated sealed Gate page.
     const sourceGateVideo = document.querySelector<HTMLVideoElement>(
       ".gate-window video"
@@ -119,6 +146,7 @@ export function RouteRouter() {
     return () => {
       navLinks.forEach((link) => link.removeEventListener("click", onNavClick));
       closeButtons.forEach((btn) => btn.removeEventListener("click", onCloseClick));
+      document.removeEventListener("click", onDelegatedClick);
       window.removeEventListener("hashchange", onHashChange);
     };
   }, [open]);

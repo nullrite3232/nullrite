@@ -5,15 +5,56 @@ import { IntroGate } from "@/components/IntroGate";
 import { useRitual } from "@/components/RitualContext";
 import { RoutePagesV2 } from "@/components/RoutePagesV2";
 import { RouteRouter } from "@/components/RouteRouter";
-import { ASSETS } from "@/lib/siteConfig";
+import { ASSETS, SITE } from "@/lib/siteConfig";
+import { useProtocolPhase } from "@/lib/useProtocolPhase";
 
 export default function Home() {
   const { open } = useRitual();
+  const phase = useProtocolPhase();
   const [siteVisible, setSiteVisible] = useState(false);
 
   const openDocs = () => {
     document.querySelector<HTMLElement>('.main-nav a[data-nav="docs"]')?.click();
   };
+
+  const openCollection = () => {
+    document.querySelector<HTMLElement>('.main-nav a[data-nav="collection"]')?.click();
+  };
+
+  const primaryAction =
+    phase.publicMintActive || !phase.summoningStarted
+      ? open
+      : openCollection;
+
+  const primaryLabel = phase.isSoldOut || phase.revealed
+    ? "View the Assembly"
+    : phase.publicMintActive
+      ? "Summon a Vessel"
+      : phase.summoningStarted
+        ? "View the Assembly"
+        : "View the Summoning";
+
+  const heroEyebrow = phase.isSoldOut
+    ? "NULL RITE // ASSEMBLY COMPLETE"
+    : phase.publicMintActive
+      ? "NULL RITE // PUBLIC SUMMONING // OPEN"
+      : phase.summoningStarted
+        ? "NULL RITE // PUBLIC SUMMONING // PAUSED"
+        : "NULL RITE // PRE-LAUNCH";
+
+  const heroSubline = phase.isSoldOut
+    ? "HAVE ANSWERED."
+    : phase.publicMintActive
+      ? "ARE ANSWERING."
+      : phase.summoningStarted
+        ? "ARE FORMING."
+        : "WILL ANSWER.";
+
+  const summoningLabel = phase.summoningState === "PRE_LAUNCH"
+    ? "SEALED"
+    : phase.summoningState;
+
+  const publicPhaseLabel = phase.publicPhase.replaceAll("_", " ");
 
   return (
     <>
@@ -23,17 +64,17 @@ export default function Home() {
         <main id="top">
           <section className="hero">
             <div className="hero-copy">
-              <div className="eyebrow">NULL RITE // PRE-LAUNCH</div>
+              <div className="eyebrow">{heroEyebrow}</div>
               <h1>
-                3232 VESSELS<span className="small">WILL ANSWER.</span>
+                3232 VESSELS<span className="small">{heroSubline}</span>
               </h1>
               <p className="lead">
-                The forms remain hidden. Each Vessel will enter NULL RITE with an
+                The forms remain hidden. Each Vessel enters NULL RITE with an
                 identity of its own—and a history that has yet to be written.
               </p>
               <div className="actions">
-                <button className="btn primary" onClick={open}>
-                  View the Summoning
+                <button className="btn primary" onClick={primaryAction}>
+                  {primaryLabel}
                 </button>
                 <button className="btn" onClick={openDocs}>
                   Read the Docs
@@ -45,7 +86,7 @@ export default function Home() {
                   <span>Total Supply</span>
                 </div>
                 <div>
-                  <strong>Sealed</strong>
+                  <strong>{summoningLabel}</strong>
                   <span>Summoning State</span>
                 </div>
                 <div>
@@ -63,9 +104,9 @@ export default function Home() {
               <div className="gate-status">
                 <div className="gate-status-row">
                   <span>Public Summoning</span>
-                  <span>SEALED</span>
+                  <span>{summoningLabel}</span>
                 </div>
-                <div className="progress"><i style={{ width: "0%" }} /></div>
+                <div className="progress"><i style={{ width: `${phase.progress}%` }} /></div>
               </div>
             </div>
           </section>
@@ -85,7 +126,7 @@ export default function Home() {
               </p>
               <div className="reveal-state">
                 <span className="dot" />
-                <span>REVEAL_PROTOCOL / DORMANT</span>
+                <span>REVEAL_PROTOCOL / {phase.revealState}</span>
               </div>
             </div>
           </section>
@@ -235,7 +276,7 @@ export default function Home() {
               <h2>EVERY CHOICE CHANGES WHAT COMES NEXT.</h2>
               <p>The Gate does not give a Vessel something. The Gate makes the Vessel choose something.</p>
               <div className="actions" style={{ justifyContent: "center" }}>
-                <button className="btn primary" onClick={open}>View the Summoning</button>
+                <button className="btn primary" onClick={primaryAction}>{primaryLabel}</button>
                 <button className="btn" onClick={openDocs}>Read the Docs</button>
               </div>
             </div>
@@ -243,8 +284,8 @@ export default function Home() {
         </main>
 
         <footer className="footer">
-          <span>NULL RITE // 3232 VESSELS</span>
-          <span>ROBINHOOD CHAIN // PRE-LAUNCH</span>
+          <span>NULL RITE // {phase.minted === null ? SITE.supply : `${phase.minted} / ${SITE.supply}`} VESSELS</span>
+          <span>ROBINHOOD CHAIN // {publicPhaseLabel}</span>
         </footer>
       </div>
 

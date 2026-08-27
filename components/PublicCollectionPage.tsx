@@ -1,10 +1,22 @@
 "use client";
 
+import { CollectionPage } from "@/components/CollectionPage";
 import { useRitual } from "@/components/RitualContext";
 import { SITE } from "@/lib/siteConfig";
+import { useProtocolPhase } from "@/lib/useProtocolPhase";
 
 export function PublicCollectionPage() {
   const { open } = useRitual();
+  const phase = useProtocolPhase();
+
+  if (
+    phase.summoningStarted ||
+    phase.publicMintActive ||
+    phase.isSoldOut ||
+    phase.revealed
+  ) {
+    return <CollectionPage />;
+  }
 
   return (
     <section className="route-page" id="collectionPage" aria-hidden="true">
