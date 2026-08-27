@@ -8,21 +8,15 @@ import {
   useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
-import { parseEther, parseEventLogs, zeroAddress } from "viem";
+import { formatEther, parseEventLogs, zeroAddress } from "viem";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { RH_TESTNET_CHAIN } from "@/lib/chain";
 import { ASSETS, SITE } from "@/lib/siteConfig";
 import { useAssemblySupply } from "@/lib/useAssemblySupply";
-
-const MINT_ABI = [
-  {
-    type: "function",
-    name: "mint",
-    stateMutability: "payable",
-    inputs: [{ name: "quantity", type: "uint256" }],
-    outputs: [],
-  },
-] as const;
+import {
+  useMintContractState,
+  VESSEL_MINT_ABI,
+} from "@/lib/useMintContractState";
 
 const TRANSFER_ABI = [
   {
@@ -55,8 +49,21 @@ function friendlyTxError(message?: string) {
   if (lower.includes("insufficient funds")) {
     return "Insufficient ETH for this summoning.";
   }
+  if (
+    lower.includes("mint inactive") ||
+    lower.includes("mint is not active") ||
+    lower.includes("public mint")
+  ) {
+    return "The Summoning is currently sealed by the contract.";
+  }
+  if (lower.includes("wallet") && lower.includes("limit")) {
+    return "This wallet has reached its onchain summoning limit.";
+  }
+  if (lower.includes("sold out")) {
+    return "The Assembly is complete.";
+  }
   if (lower.includes("exceeds") || lower.includes("max")) {
-    return "The contract rejected this quantity. Check the per-wallet or per-summoning limit.";
+    return "The contract rejected this quantity. Check the wallet allowance or per-summoning limit.";
   }
   return message.split("\n")[0] || "Transaction failed.";
 }
@@ -87,6 +94,21 @@ export function RitualOverlay({
   } = useWaitForTransactionReceipt({ hash });
   const { minted, remaining, refetch: refetchSupply } = useAssemblySupply();
 
+  const {
+    mintPriceWei,
+    maxPerTx,
+    maxPerWallet,
+    publicMintActive,
+    contractStateSynced,
+    isContractStateLoading,
+    walletAllowance,
+    isAllowanceLoading,
+  } = useMintContractState({
+    address,
+    enabled: open,
+    remaining,
+  });
+
   const [stage, setStage] = useState<Stage>("config");
   const [qty, setQty] = useState(1);
   const [ids, setIds] = useState<string[]>([]);
@@ -104,10 +126,24 @@ export function RitualOverlay({
     }
   }, [open, reset, refetchSupply]);
 
-  const cost = useMemo(() => {
-    const value = SITE.mintPriceEth * qty;
-    return Number(value.toFixed(4)).toString();
-  }, [qty]);
+  const maxSelectable = useMemo(() => {
+    if (!publicMintActive) return 0;
+    const supplyCap =
+      remaining === null ? maxPerTx : Math.max(0, Math.min(maxPerTx, remaining));
+    if (walletAllowance === null) return supplyCap;
+    return Math.max(0, Math.min(supplyCap, walletAllowance));
+  }, [maxPerTx, publicMintActive, remaining, walletAllowance]);
+
+  useEffect(() => {
+    if (maxSelectable > 0 && qty > maxSelectable) {
+      setQty(maxSelectable);
+    }
+  }, [maxSelectable, qty]);
+
+  const cost = useMemo(
+    () => formatEther(mintPriceWei * BigInt(qty)),
+    [mintPriceWei, qty]
+  );
 
   useEffect(() => {
     if (hash) setStage("chain");
@@ -160,7 +196,8 @@ export function RitualOverlay({
   }, [isConfirmed, receipt, address, refetchSupply]);
 
   const setQtySafe = (n: number) => {
-    const next = Math.max(1, Math.min(SITE.maxPerTx, n));
+    const ceiling = maxSelectable > 0 ? maxSelectable : maxPerTx;
+    const next = Math.max(1, Math.min(ceiling, n));
     setQty(next);
     const el = qtyElRef.current;
     if (el && typeof el.animate === "function") {
@@ -182,6 +219,32 @@ export function RitualOverlay({
       return;
     }
 
+    if (remaining === 0) {
+      setTxError("The Assembly is complete.");
+      return;
+    }
+
+    if (!publicMintActive) {
+      setTxError("The Summoning is currently sealed by the contract.");
+      return;
+    }
+
+    if (isAllowanceLoading) {
+      setTxError("Checking this wallet against the live contract. Try again in a moment.");
+      return;
+    }
+
+    if (walletAllowance === 0) {
+      setTxError("This wallet has reached its onchain summoning limit.");
+      return;
+    }
+
+    if (maxSelectable > 0 && qty > maxSelectable) {
+      setTxError(`This wallet can summon up to ${maxSelectable} more in this transaction.`);
+      setQty(maxSelectable);
+      return;
+    }
+
     try {
       if (chainId !== RH_TESTNET_CHAIN.id) {
         await switchChainAsync({ chainId: RH_TESTNET_CHAIN.id });
@@ -190,10 +253,10 @@ export function RitualOverlay({
       setStage("signature");
       await writeContractAsync({
         address: SITE.contractAddress as `0x${string}`,
-        abi: MINT_ABI,
+        abi: VESSEL_MINT_ABI,
         functionName: "mint",
         args: [BigInt(qty)],
-        value: parseEther(cost),
+        value: mintPriceWei * BigInt(qty),
         chainId: RH_TESTNET_CHAIN.id,
       });
     } catch (error: any) {
@@ -217,6 +280,39 @@ export function RitualOverlay({
     ? "Their final forms remain sealed. The Reveal event will expose each born identity, traits, and rarity later."
     : "Its final form remains sealed. The Reveal event will expose its born identity, traits, and rarity later.";
 
+  const allowanceLabel = !isConnected
+    ? "CONNECT TO CHECK"
+    : isAllowanceLoading
+      ? "CHECKING"
+      : walletAllowance === null
+        ? "CONTRACT WILL VERIFY"
+        : walletAllowance === 0
+          ? "LIMIT REACHED"
+          : `${walletAllowance} REMAINING`;
+
+  const beginLabel = !publicMintActive
+    ? "Summoning Sealed"
+    : remaining === 0
+      ? "Assembly Complete"
+      : walletAllowance === 0
+        ? "Wallet Limit Reached"
+        : isContractStateLoading
+          ? "Syncing Contract"
+          : isAllowanceLoading
+            ? "Checking Wallet"
+            : isPending
+              ? "Awaiting Signature"
+              : "Begin the Rite";
+
+  const beginDisabled =
+    isPending ||
+    isConfirming ||
+    isContractStateLoading ||
+    isAllowanceLoading ||
+    remaining === 0 ||
+    !publicMintActive ||
+    walletAllowance === 0;
+
   return (
     <div className="ritual-overlay show" id="ritualOverlay">
       <div className="ritual-shell">
@@ -236,29 +332,32 @@ export function RitualOverlay({
               <div className="eyebrow">THE SUMMONING</div>
               <h2>Call a Vessel.</h2>
               <p>
-                Something beyond the Gate is listening. Summon up to {SITE.maxPerTx} Vessels per transaction
-                and up to {SITE.maxMintPerWallet} per wallet. Their final identities remain sealed until reveal.
+                Something beyond the Gate is listening. Summon up to {maxPerTx} Vessels per transaction
+                and up to {maxPerWallet} per wallet. Their final identities remain sealed until reveal.
               </p>
 
               <div className="ritual-qty-wrap">
                 <div className="ritual-label">Select how many will answer</div>
                 <div className="summon-counter">
-                  <button className="counter-btn" id="qtyMinus" aria-label="Decrease quantity" disabled={qty <= 1 || isPending || isConfirming} onClick={() => setQtySafe(qty - 1)}>−</button>
+                  <button className="counter-btn" id="qtyMinus" aria-label="Decrease quantity" disabled={qty <= 1 || isPending || isConfirming || isAllowanceLoading} onClick={() => setQtySafe(qty - 1)}>−</button>
                   <div className="counter-center">
                     <div className="counter-value" id="ritualQty" ref={qtyElRef}>{qty}</div>
                     <div className="counter-caption">{plural ? "VESSELS" : "VESSEL"}</div>
                   </div>
-                  <button className="counter-btn" id="qtyPlus" aria-label="Increase quantity" disabled={qty >= SITE.maxPerTx || isPending || isConfirming} onClick={() => setQtySafe(qty + 1)}>+</button>
+                  <button className="counter-btn" id="qtyPlus" aria-label="Increase quantity" disabled={maxSelectable === 0 || qty >= maxSelectable || isPending || isConfirming || isAllowanceLoading} onClick={() => setQtySafe(qty + 1)}>+</button>
                 </div>
                 <div className="counter-meta">
                   <span>MIN / 1</span>
-                  <span>MAX / {SITE.maxPerTx} PER SUMMONING</span>
+                  <span>MAX / {maxPerTx} PER SUMMONING</span>
                 </div>
               </div>
 
               <div className="ritual-data">
                 <div className="ritual-row"><span>Summoning Cost</span><span id="sumCost">{cost} ETH</span></div>
                 <div className="ritual-row"><span>Network</span><span>Robinhood Chain</span></div>
+                <div className="ritual-row"><span>Summoning State</span><span>{publicMintActive ? "OPEN" : "SEALED"}</span></div>
+                <div className="ritual-row"><span>Wallet Allowance</span><span>{allowanceLabel}</span></div>
+                <div className="ritual-row"><span>Contract Rules</span><span>{contractStateSynced ? "ONCHAIN // LIVE" : isContractStateLoading ? "SYNCING" : "CONTRACT VERIFY"}</span></div>
                 <div className="ritual-row"><span>Reveal State</span><span>SEALED</span></div>
                 <div className="ritual-row">
                   <span>Vessels Summoned</span>
@@ -270,8 +369,8 @@ export function RitualOverlay({
 
               <div className="ritual-actions">
                 <button className="btn" id="ritualCancel" onClick={close}>Cancel</button>
-                <button className="btn primary" id="ritualBegin" onClick={begin} disabled={isPending || isConfirming || remaining === 0}>
-                  {isPending ? "Awaiting Signature" : "Begin the Rite"}
+                <button className="btn primary" id="ritualBegin" onClick={begin} disabled={beginDisabled}>
+                  {beginLabel}
                 </button>
               </div>
             </div>

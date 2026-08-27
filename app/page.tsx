@@ -201,6 +201,75 @@ export default function Home() {
             </div>
           </section>
 
+          <section className="section resonance-section" id="resonance">
+            <div className="resonance-grid">
+              <div className="resonance-copy">
+                <div className="eyebrow">THE RESONANCE // COMPLETION HAS CONSEQUENCE</div>
+                <h2>
+                  COMPLETE THE GATE.
+                  <br />
+                  EARN RESONANCE.
+                </h2>
+                <p>
+                  Gate completion earns eligibility for that Gate&apos;s disclosed
+                  Resonance Pool. A Pool may contain $RITE, ETH, Relics, access,
+                  or other announced rewards. The Pool and its requirements are
+                  disclosed before participation begins.
+                </p>
+                <p className="resonance-note">
+                  Holding a Vessel alone is not enough. Eligibility is earned through completion.
+                </p>
+              </div>
+
+              <div className="resonance-terminal" aria-label="Resonance protocol preview">
+                <div className="resonance-terminal-head">GATE PROTOCOL // SEALED</div>
+                <div className="resonance-line">
+                  <span>Entry</span>
+                  <strong>VESSEL</strong>
+                </div>
+                <div className="resonance-line">
+                  <span>Offering</span>
+                  <strong>$RITE</strong>
+                </div>
+                <div className="resonance-line">
+                  <span>Offering State</span>
+                  <strong className="burn">BURNED</strong>
+                </div>
+                <div className="resonance-line">
+                  <span>Completion</span>
+                  <strong>REQUIRED</strong>
+                </div>
+                <div className="resonance-line">
+                  <span>Resonance</span>
+                  <strong className="earned">ELIGIBILITY EARNED</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="resonance-flow" aria-label="Gate completion flow">
+              <div className="resonance-step">
+                <span>01 / ENTER</span>
+                <strong>Enter the Gate</strong>
+              </div>
+              <div className="resonance-step">
+                <span>02 / OFFER</span>
+                <strong>Make the Offering</strong>
+              </div>
+              <div className="resonance-step">
+                <span>03 / BURN</span>
+                <strong>$RITE Burns</strong>
+              </div>
+              <div className="resonance-step">
+                <span>04 / COMPLETE</span>
+                <strong>Complete the Rite</strong>
+              </div>
+              <div className="resonance-step">
+                <span>05 / RESONATE</span>
+                <strong>Earn Resonance</strong>
+              </div>
+            </div>
+          </section>
+
           <section className="section" id="record">
             <div className="section-head">
               <div>

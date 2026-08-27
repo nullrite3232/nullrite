@@ -24,16 +24,40 @@ export function RoutePages() {
               preload="auto"
             />
             <div className="gate-page-copy">
-              <div className="eyebrow">GATE_STATE // SEALED</div>
+              <div className="eyebrow">GATE_STATE // SEALED // NEXT: RESONANCE</div>
               <h2>
                 THE GATE
                 <br />
                 REMAINS SEALED.
               </h2>
               <p>
-                This page is reserved for the Gate experience. It has not opened
-                yet. When the next phase begins, the live Gate interface can
-                replace this sealed state without changing the rest of the site.
+                The Gate is where a Vessel begins to accumulate permanent history.
+                When Resonance begins, Vessels will face paths and conditions that
+                can change according to what their Record already contains.
+              </p>
+
+              <div className="gate-protocol-grid" aria-label="Sealed Gate protocol preview">
+                <div className="gate-protocol-cell">
+                  <span>Decisions</span>
+                  <strong>IRREVERSIBLE</strong>
+                </div>
+                <div className="gate-protocol-cell">
+                  <span>Offerings</span>
+                  <strong className="burn">$RITE // BURNED</strong>
+                </div>
+                <div className="gate-protocol-cell">
+                  <span>Completion</span>
+                  <strong>REQUIRED</strong>
+                </div>
+                <div className="gate-protocol-cell">
+                  <span>Resonance</span>
+                  <strong className="resonance">POOL ELIGIBILITY</strong>
+                </div>
+              </div>
+
+              <p className="gate-protocol-note">
+                Exact paths, hidden conditions and outcomes remain undisclosed until a Gate opens.
+                Each Gate publishes its Offering, Pool and completion rules before participation begins.
               </p>
 
               <div className="gate-lock">
@@ -42,8 +66,8 @@ export function RoutePages() {
                   <span>Current State</span>
                 </div>
                 <div>
-                  <strong>COMING SOON</strong>
-                  <span>Entry Status</span>
+                  <strong>RESONANCE</strong>
+                  <span>Next State</span>
                 </div>
               </div>
 
@@ -79,6 +103,7 @@ export function RoutePages() {
               <a href="#docs-vessels">Vessels</a>
               <a href="#docs-summoning">Summoning</a>
               <a href="#docs-reveal">Reveal</a>
+              <a href="#docs-fair-reveal">Fair Reveal</a>
               <a href="#docs-gate">The Gate</a>
             </aside>
 
@@ -113,11 +138,11 @@ export function RoutePages() {
                   </div>
                   <div className="ritual-row">
                     <span>Wallet Limit</span>
-                    <span>10 / WALLET</span>
+                    <span>READ ONCHAIN</span>
                   </div>
                   <div className="ritual-row">
                     <span>Per Summoning</span>
-                    <span>1–5 VESSELS</span>
+                    <span>READ ONCHAIN</span>
                   </div>
                 </div>
               </article>
@@ -163,9 +188,9 @@ export function RoutePages() {
                 </div>
                 <h2>THE SUMMONING</h2>
                 <p>
-                  The Summoning is the mint experience. The current interface
-                  supports 1 to 5 Vessels per transaction, while the collection
-                  policy allows up to 10 Vessels per wallet.
+                  The Summoning is the mint experience. Price, public mint state,
+                  per-transaction limit and per-wallet limit are read directly
+                  from the Vessel contract by the live interface.
                 </p>
                 <p>
                   After the wallet signs, the interface waits for chain
@@ -174,16 +199,16 @@ export function RoutePages() {
                 </p>
                 <div className="docs-spec">
                   <div className="ritual-row">
+                    <span>Mint Price</span>
+                    <span>LIVE CONTRACT STATE</span>
+                  </div>
+                  <div className="ritual-row">
                     <span>Per Transaction</span>
-                    <span>1–5</span>
+                    <span>LIVE CONTRACT STATE</span>
                   </div>
                   <div className="ritual-row">
                     <span>Per Wallet</span>
-                    <span>10 MAX</span>
-                  </div>
-                  <div className="ritual-row">
-                    <span>Success State</span>
-                    <span>VESSEL ANSWERED</span>
+                    <span>LIVE CONTRACT STATE</span>
                   </div>
                   <div className="ritual-row">
                     <span>Identity State</span>
@@ -203,9 +228,53 @@ export function RoutePages() {
                   that page can display actual Vessel artwork, rarity and traits.
                 </p>
                 <p>
-                  Reveal exposes the Vessel&apos;s born identity. It does not open
-                  the Gate; the Gate remains a separate phase that begins later.
+                  Token IDs remain sequential. The final artwork, traits and rarity
+                  assignment are randomized at Reveal, so mint order does not
+                  determine the final form a Vessel receives.
                 </p>
+              </article>
+
+              <article id="docs-fair-reveal">
+                <div className="docs-status">
+                  <i></i>Verifiable Assignment
+                </div>
+                <h2>FAIR REVEAL</h2>
+                <p>
+                  Before the Reveal seed is known, the complete reveal set will be
+                  committed through a published provenance hash. That commitment
+                  fixes the underlying set before final assignment occurs.
+                </p>
+                <p>
+                  The final assignment will use a pre-declared onchain seed source
+                  after the provenance commitment exists. The commitment, seed and
+                  resulting assignment method will be published so the reveal can
+                  be independently verified.
+                </p>
+                <div className="docs-proof">
+                  <strong>THE ORDER CANNOT REARRANGE WHAT HAS ALREADY BEEN COMMITTED.</strong>
+                  <p>
+                    Provenance fixes the set first. The later seed determines how
+                    that committed set maps to sequential Vessel IDs.
+                  </p>
+                </div>
+                <div className="docs-spec">
+                  <div className="ritual-row">
+                    <span>Token IDs</span>
+                    <span>SEQUENTIAL</span>
+                  </div>
+                  <div className="ritual-row">
+                    <span>Artwork Assignment</span>
+                    <span>RANDOMIZED AT REVEAL</span>
+                  </div>
+                  <div className="ritual-row">
+                    <span>Provenance</span>
+                    <span>PUBLISHED BEFORE SEED</span>
+                  </div>
+                  <div className="ritual-row">
+                    <span>Verification</span>
+                    <span>PUBLIC</span>
+                  </div>
+                </div>
               </article>
 
               <article id="docs-gate">
@@ -214,14 +283,15 @@ export function RoutePages() {
                 </div>
                 <h2>THE GATE</h2>
                 <p>
-                  The Gate is intentionally sealed in V1. Its dedicated page
-                  exists now so users can see the destination without exposing
-                  unfinished mechanics.
+                  The Gate remains sealed until Resonance. When it opens, a Vessel
+                  can make irreversible choices that become part of its persistent
+                  Record and influence what future Gates show it.
                 </p>
                 <p>
-                  When the Gate opens, a Vessel can make irreversible choices
-                  that become part of its persistent Record and influence what
-                  future Gates show it.
+                  Certain Gate actions can require an Offering in $RITE. Accepted
+                  Offerings are burned. Completing a Gate can earn eligibility for
+                  that Gate&apos;s disclosed Resonance Pool; exact requirements and
+                  Pool contents are published per Gate before participation begins.
                 </p>
                 <div className="docs-spec">
                   <div className="ritual-row">
@@ -229,8 +299,16 @@ export function RoutePages() {
                     <span>SEALED</span>
                   </div>
                   <div className="ritual-row">
-                    <span>Entry</span>
-                    <span>COMING SOON</span>
+                    <span>Next State</span>
+                    <span>RESONANCE</span>
+                  </div>
+                  <div className="ritual-row">
+                    <span>Decisions</span>
+                    <span>IRREVERSIBLE</span>
+                  </div>
+                  <div className="ritual-row">
+                    <span>Completion</span>
+                    <span>RESONANCE ELIGIBILITY</span>
                   </div>
                 </div>
               </article>
