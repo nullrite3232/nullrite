@@ -10,8 +10,9 @@ export const SITE = {
   testnetChainId: 46630,
   supply: 3232, // §27 TOTAL SUPPLY
   maxMintPerWallet: 10, // §27
+  maxPerTx: 5, // on-chain verified (testnet): VesselNFT.maxPerTx() = 5
   mintCurrency: "ETH", // §27
-  mintPriceEth: 0.01, // §27 — PLACEHOLDER (not locked)
+  mintPriceEth: 0.0001, // on-chain verified (testnet): VesselNFT.mintPrice() = 0x5af3107a4000 = 0.0001 ETH
   mintPriceLocked: false, // spec: placeholder unless explicitly confirmed
   contractAddress: "0xd3E85fe5D282e1bc49F4A6B189272Ec874D29500", // Vessel NFT
 } as const;

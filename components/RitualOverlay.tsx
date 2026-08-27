@@ -67,7 +67,9 @@ export function RitualOverlay({
     }
   }, [open, reset]);
 
-  const cost = (SITE.mintPriceEth * qty).toFixed(2);
+  // Format with enough decimals for sub-cent prices (contract: 0.0001 ETH)
+  const fmtEth = (n: number) => Number(n.toFixed(4)).toString();
+  const cost = fmtEth(SITE.mintPriceEth * qty);
 
   useEffect(() => {
     if (hash) setStage("chain");
@@ -83,7 +85,7 @@ export function RitualOverlay({
   }, [isConfirmed, qty]);
 
   const setQtySafe = (n: number) => {
-    const next = Math.max(1, Math.min(SITE.maxMintPerWallet, n));
+    const next = Math.max(1, Math.min(SITE.maxPerTx, n));
     setQty(next);
     // v15 counter pop animation (Web Animations API)
     const el = qtyElRef.current;
@@ -216,7 +218,7 @@ export function RitualOverlay({
                     className="counter-btn"
                     id="qtyPlus"
                     aria-label="Increase quantity"
-                    disabled={qty >= SITE.maxMintPerWallet}
+                    disabled={qty >= SITE.maxPerTx}
                     onClick={() => setQtySafe(qty + 1)}
                   >
                     +
@@ -224,7 +226,7 @@ export function RitualOverlay({
                 </div>
                 <div className="counter-meta">
                   <span>MIN / 1</span>
-                  <span>MAX / {SITE.maxMintPerWallet} PER WALLET</span>
+                  <span>MAX / {SITE.maxPerTx} PER SUMMONING</span>
                 </div>
               </div>
               <div className="ritual-data">
