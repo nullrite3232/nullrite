@@ -1,6 +1,6 @@
 # NULL RITE — Web
 
-Next.js 14 + TypeScript + wagmi/viem + Reown AppKit for the NULL RITE website.
+Next.js 14 + TypeScript + wagmi/viem + WalletConnect transport for the NULL RITE website.
 
 Current public phase: **pre-launch / Public Summoning sealed / Reveal sealed / Gate sealed**.
 
@@ -21,9 +21,11 @@ The GitHub repository name is intentionally **nullrite**.
 - Next.js 14 (App Router)
 - TypeScript
 - wagmi + viem
-- Reown AppKit + Wagmi adapter
+- Custom NULL RITE wallet modal
+- injected / EIP-6963 wallets
+- WalletConnect mobile / QR fallback
 - TanStack Query
-- Robinhood Chain as the public wallet network
+- Robinhood Chain
 - Cloudinary for website media delivery
 - Vercel for deployment
 
@@ -34,38 +36,43 @@ The GitHub repository name is intentionally **nullrite**.
 - Reveal: SEALED
 - Gate: SEALED
 - $RITE: SEALED
-- Public wallet context: Robinhood Chain mainnet
 - Development mint plumbing remains in the codebase but is not exposed by the public pre-launch UI.
+
+## Runtime network
+
+Network and Vessel contract selection are centralized. Components must not hardcode testnet/mainnet IDs or contract addresses.
+
+```text
+NEXT_PUBLIC_NULLRITE_NETWORK=testnet
+NEXT_PUBLIC_NULLRITE_ADDRESS=<contract for selected network>
+```
+
+`testnet` is the safe default while release-candidate testing is in progress. Mainnet must be selected explicitly after the production Vessel contract has been deployed and approved.
 
 ## Wallet connection
 
-The public wallet layer uses Reown AppKit rather than the legacy RainbowKit modal.
+The public wallet flow is:
 
 ```text
 Connect Wallet
-→ Reown AppKit EVM wallet picker
-→ injected wallet / mobile wallet handoff / WalletConnect
+→ custom NULL RITE wallet modal
+→ injected wallet or WalletConnect
 → wallet session restored on return when supported
 → no forced network switch during pre-launch connection
+→ switch only when an onchain action requires the runtime chain
 ```
 
-OKX, MetaMask and other EIP-6963 compatible injected wallets are discovered by the modern wallet layer. Mobile WalletConnect handoff requires a valid Reown Cloud Project ID.
+OKX, Rabby, MetaMask and other compatible injected wallets are discovered through wagmi. Mobile WalletConnect handoff requires a valid Reown Project ID.
 
-### Required Vercel variable
+### Required Reown variable
 
-Create an AppKit project in Reown Dashboard and set:
+Create a project in Reown Dashboard and set:
 
 ```text
 NEXT_PUBLIC_REOWN_PROJECT_ID=<real Reown Project ID>
 ```
 
-During migration the application will also accept a valid legacy:
-
-```text
-NEXT_PUBLIC_WC_ID=<project ID>
-```
-
-The committed placeholder is not a functional production Project ID. Add the production value in Vercel Project Settings → Environment Variables. Configure the Reown project for the domains that will host NULL RITE, including the current Vercel domain during testing and `nullrite.xyz` before custom-domain launch.
+Configure the Reown project for the domains that will host NULL RITE, including the current Vercel preview domain during testing and `nullrite.xyz` before custom-domain launch.
 
 ## Local development
 
@@ -85,8 +92,9 @@ npm run build
 Public environment variables can include:
 
 ```text
-NEXT_PUBLIC_REOWN_PROJECT_ID
+NEXT_PUBLIC_NULLRITE_NETWORK
 NEXT_PUBLIC_NULLRITE_ADDRESS
+NEXT_PUBLIC_REOWN_PROJECT_ID
 NEXT_PUBLIC_IPFS_GATEWAY
 ```
 

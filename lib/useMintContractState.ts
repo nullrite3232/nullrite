@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { parseEther } from "viem";
 import { usePublicClient, useReadContracts } from "wagmi";
-import { RH_TESTNET_CHAIN } from "@/lib/chain";
+import { RUNTIME } from "@/lib/runtime";
 import { SITE } from "@/lib/siteConfig";
 
 export const VESSEL_MINT_ABI = [
@@ -75,8 +75,8 @@ export function useMintContractState({
   enabled: boolean;
   remaining: number | null;
 }) {
-  const contractAddress = SITE.contractAddress as Address;
-  const publicClient = usePublicClient({ chainId: RH_TESTNET_CHAIN.id });
+  const contractAddress = RUNTIME.contractAddress;
+  const publicClient = usePublicClient({ chainId: RUNTIME.chain.id });
 
   const reads = useReadContracts({
     allowFailure: false,
@@ -85,29 +85,29 @@ export function useMintContractState({
         address: contractAddress,
         abi: VESSEL_MINT_ABI,
         functionName: "mintPrice",
-        chainId: RH_TESTNET_CHAIN.id,
+        chainId: RUNTIME.chain.id,
       },
       {
         address: contractAddress,
         abi: VESSEL_MINT_ABI,
         functionName: "maxPerTx",
-        chainId: RH_TESTNET_CHAIN.id,
+        chainId: RUNTIME.chain.id,
       },
       {
         address: contractAddress,
         abi: VESSEL_MINT_ABI,
         functionName: "maxPerWallet",
-        chainId: RH_TESTNET_CHAIN.id,
+        chainId: RUNTIME.chain.id,
       },
       {
         address: contractAddress,
         abi: VESSEL_MINT_ABI,
         functionName: "publicMintActive",
-        chainId: RH_TESTNET_CHAIN.id,
+        chainId: RUNTIME.chain.id,
       },
     ],
     query: {
-      enabled: Boolean(SITE.contractAddress) && enabled,
+      enabled: RUNTIME.contractConfigured && enabled,
       refetchInterval: 8_000,
     },
   });
@@ -116,14 +116,16 @@ export function useMintContractState({
     | readonly [bigint, bigint, bigint, boolean]
     | undefined;
 
+  const contractStateSynced = Boolean(results) && !reads.error;
   const mintPriceWei = results?.[0] ?? parseEther(SITE.mintPriceEth.toString());
   const maxPerTx = Math.max(1, Number(results?.[1] ?? BigInt(SITE.maxPerTx)));
   const maxPerWallet = Math.max(
     1,
     Number(results?.[2] ?? BigInt(SITE.maxMintPerWallet))
   );
-  const publicMintActive = results?.[3] ?? true;
-  const contractStateSynced = Boolean(results);
+
+  // Production safety rule: unknown contract state is SEALED, never OPEN.
+  const publicMintActive = contractStateSynced ? Boolean(results?.[3]) : false;
 
   const probeCeiling = useMemo(() => {
     if (!publicMintActive) return 0;
@@ -137,6 +139,13 @@ export function useMintContractState({
 
   useEffect(() => {
     if (!enabled || !address) {
+      setWalletAllowance(null);
+      setIsAllowanceLoading(false);
+      setAllowanceCheckError(null);
+      return;
+    }
+
+    if (!RUNTIME.contractConfigured || !contractStateSynced || !publicMintActive) {
       setWalletAllowance(null);
       setIsAllowanceLoading(false);
       setAllowanceCheckError(null);
@@ -207,10 +216,12 @@ export function useMintContractState({
   }, [
     address,
     contractAddress,
+    contractStateSynced,
     enabled,
     mintPriceWei,
     probeCeiling,
     publicClient,
+    publicMintActive,
   ]);
 
   return {

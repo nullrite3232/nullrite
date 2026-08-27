@@ -1,31 +1,27 @@
 import { createConfig } from "wagmi";
 import { createConnector, injected } from "@wagmi/core";
 import { defineChain, getAddress, http, numberToHex } from "viem";
-import { RH_CHAIN } from "@/lib/chain";
+import { RUNTIME } from "@/lib/runtime";
 
-const LEGACY_PLACEHOLDER = "your_walletconnect_project_id_here";
-const rawProjectId =
-  process.env.NEXT_PUBLIC_REOWN_PROJECT_ID ||
-  process.env.NEXT_PUBLIC_WC_ID ||
-  "";
+const rawProjectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID?.trim() ?? "";
 
-export const walletConnectConfigured =
-  rawProjectId.length >= 24 && rawProjectId !== LEGACY_PLACEHOLDER;
-
+export const walletConnectConfigured = rawProjectId.length >= 24;
 export const walletProjectId = walletConnectConfigured ? rawProjectId : "";
 
+// Wagmi always exposes exactly the runtime chain. Testnet rehearsal and mainnet
+// therefore use the same wallet code path and differ only by environment config.
 export const robinhoodChain = defineChain({
-  id: RH_CHAIN.id,
-  name: RH_CHAIN.name,
-  nativeCurrency: RH_CHAIN.nativeCurrency,
-  rpcUrls: RH_CHAIN.rpcUrls,
-  blockExplorers: RH_CHAIN.blockExplorers,
+  id: RUNTIME.chain.id,
+  name: RUNTIME.chain.name,
+  nativeCurrency: RUNTIME.chain.nativeCurrency,
+  rpcUrls: RUNTIME.chain.rpcUrls,
+  blockExplorers: RUNTIME.chain.blockExplorers,
 });
 
 const walletMetadata = {
   name: "NULL RITE",
   description: "A persistent onchain ritual on Robinhood Chain.",
-  url: "https://nullrite-web.vercel.app",
+  url: "https://nullrite.xyz",
   icons: [
     "https://res.cloudinary.com/ugbfexbl/image/upload/v1787805854/rite-core.png",
   ],

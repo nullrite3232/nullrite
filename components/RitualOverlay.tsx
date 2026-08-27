@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useAppKit } from "@reown/appkit/react";
 import {
   useAccount,
   useChainId,
@@ -10,8 +9,9 @@ import {
   useWriteContract,
 } from "wagmi";
 import { formatEther, parseEventLogs, zeroAddress } from "viem";
-import { RH_TESTNET_CHAIN } from "@/lib/chain";
+import { useWalletModal } from "@/components/WalletModal";
 import { ASSETS, SITE } from "@/lib/siteConfig";
+import { RUNTIME, transactionExplorerUrl } from "@/lib/runtime";
 import { useAssemblySupply } from "@/lib/useAssemblySupply";
 import {
   useMintContractState,
@@ -77,7 +77,7 @@ export function RitualOverlay({
 }) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const { open: openWallet } = useAppKit();
+  const { openWalletModal } = useWalletModal();
   const { switchChainAsync } = useSwitchChain();
   const {
     writeContractAsync,
@@ -215,7 +215,22 @@ export function RitualOverlay({
     setTxError(null);
 
     if (!isConnected) {
-      await openWallet({ view: "Connect" });
+      openWalletModal();
+      return;
+    }
+
+    if (!RUNTIME.contractConfigured) {
+      setTxError("The Vessel contract is not configured for this environment.");
+      return;
+    }
+
+    if (isContractStateLoading) {
+      setTxError("Reading the live Summoning state from the contract.");
+      return;
+    }
+
+    if (!contractStateSynced) {
+      setTxError("The live Summoning state could not be verified. No transaction was sent.");
       return;
     }
 
@@ -246,18 +261,18 @@ export function RitualOverlay({
     }
 
     try {
-      if (chainId !== RH_TESTNET_CHAIN.id) {
-        await switchChainAsync({ chainId: RH_TESTNET_CHAIN.id });
+      if (chainId !== RUNTIME.chain.id) {
+        await switchChainAsync({ chainId: RUNTIME.chain.id });
       }
 
       setStage("signature");
       await writeContractAsync({
-        address: SITE.contractAddress as `0x${string}`,
+        address: RUNTIME.contractAddress,
         abi: VESSEL_MINT_ABI,
         functionName: "mint",
         args: [BigInt(qty)],
         value: mintPriceWei * BigInt(qty),
-        chainId: RH_TESTNET_CHAIN.id,
+        chainId: RUNTIME.chain.id,
       });
     } catch (error: any) {
       setTxError(friendlyTxError(error?.shortMessage ?? error?.message));
@@ -280,31 +295,39 @@ export function RitualOverlay({
     ? "Their final forms remain sealed. The Reveal event will expose each born artwork, traits, and rarity later."
     : "Its final form remains sealed. The Reveal event will expose its born artwork, traits, and rarity later.";
 
-  const allowanceLabel = !isConnected
-    ? "CONNECT TO CHECK"
-    : isAllowanceLoading
-      ? "CHECKING"
-      : walletAllowance === null
-        ? "CONTRACT WILL VERIFY"
-        : walletAllowance === 0
-          ? "LIMIT REACHED"
-          : `${walletAllowance} REMAINING`;
-
-  const beginLabel = !publicMintActive
+  const allowanceLabel = !publicMintActive
     ? "SUMMONING SEALED"
-    : remaining === 0
-      ? "ASSEMBLY COMPLETE"
-      : walletAllowance === 0
-        ? "WALLET LIMIT REACHED"
-        : isContractStateLoading
-          ? "SYNCING CONTRACT"
-          : isAllowanceLoading
-            ? "CHECKING WALLET"
-            : isPending
-              ? "AWAITING SIGNATURE"
-              : `SUMMON ${qty} ${plural ? "VESSELS" : "VESSEL"}`;
+    : !isConnected
+      ? "CONNECT TO CHECK"
+      : isAllowanceLoading
+        ? "CHECKING"
+        : walletAllowance === null
+          ? "CONTRACT WILL VERIFY"
+          : walletAllowance === 0
+            ? "LIMIT REACHED"
+            : `${walletAllowance} REMAINING`;
+
+  const beginLabel = !RUNTIME.contractConfigured
+    ? "CONTRACT NOT CONFIGURED"
+    : isContractStateLoading
+      ? "SYNCING CONTRACT"
+      : !contractStateSynced
+        ? "CONTRACT UNAVAILABLE"
+        : !publicMintActive
+          ? "SUMMONING SEALED"
+          : remaining === 0
+            ? "ASSEMBLY COMPLETE"
+            : walletAllowance === 0
+              ? "WALLET LIMIT REACHED"
+              : isAllowanceLoading
+                ? "CHECKING WALLET"
+                : isPending
+                  ? "AWAITING SIGNATURE"
+                  : `SUMMON ${qty} ${plural ? "VESSELS" : "VESSEL"}`;
 
   const beginDisabled =
+    !RUNTIME.contractConfigured ||
+    !contractStateSynced ||
     isPending ||
     isConfirming ||
     isContractStateLoading ||
@@ -354,10 +377,10 @@ export function RitualOverlay({
 
               <div className="ritual-data">
                 <div className="ritual-row"><span>Summoning Cost</span><span id="sumCost">{cost} ETH</span></div>
-                <div className="ritual-row"><span>Network</span><span>Robinhood Chain</span></div>
+                <div className="ritual-row"><span>Network</span><span>{RUNTIME.chain.name}</span></div>
                 <div className="ritual-row"><span>Summoning State</span><span>{publicMintActive ? "OPEN" : "SEALED"}</span></div>
                 <div className="ritual-row"><span>Wallet Allowance</span><span>{allowanceLabel}</span></div>
-                <div className="ritual-row"><span>Contract Rules</span><span>{contractStateSynced ? "ONCHAIN // LIVE" : isContractStateLoading ? "SYNCING" : "CONTRACT VERIFY"}</span></div>
+                <div className="ritual-row"><span>Contract Rules</span><span>{contractStateSynced ? "ONCHAIN // LIVE" : isContractStateLoading ? "SYNCING" : "UNAVAILABLE"}</span></div>
                 <div className="ritual-row"><span>Reveal State</span><span>SEALED</span></div>
                 <div className="ritual-row">
                   <span>Vessels Summoned</span>
@@ -396,13 +419,13 @@ export function RitualOverlay({
               <div className="await-art"><img src={ASSETS.riteCore} alt="Rite Core" /></div>
               <div className="eyebrow">AWAITING THE CHAIN</div>
               <h2 className="await-head">A Vessel is answering.</h2>
-              <p className="await-copy">The transaction has been submitted to Robinhood Chain. The page will advance automatically after confirmation.</p>
+              <p className="await-copy">The transaction has been submitted to {RUNTIME.chain.name}. The page will advance automatically after confirmation.</p>
               <div className="await-status">
                 <div><span className="done">SIGNATURE ACCEPTED</span><span className="done">DONE</span></div>
                 <div><span className="done">TRANSACTION SUBMITTED</span><span className="done">DONE</span></div>
                 <div><span className={isConfirmed ? "done" : "live"}>CONFIRMATION</span><span className={isConfirmed ? "done" : "live"}>{isConfirmed ? "DONE" : isConfirming ? "CONFIRMING" : "PENDING"}</span></div>
               </div>
-              {hash && <a className="btn" href={`https://explorer.testnet.chain.robinhood.com/tx/${hash}`} target="_blank" rel="noreferrer">View Transaction</a>}
+              {hash && <a className="btn" href={transactionExplorerUrl(hash)} target="_blank" rel="noreferrer">View Transaction</a>}
             </div>
           </section>
 
@@ -420,7 +443,7 @@ export function RitualOverlay({
                 </div>
                 <div className="ritual-row"><span>Assembly</span><span>{minted === null ? "—" : minted} / {SITE.supply}</span></div>
                 <div className="ritual-row"><span>Reveal State</span><span>SEALED</span></div>
-                <div className="ritual-row"><span>Network</span><span>Robinhood Chain</span></div>
+                <div className="ritual-row"><span>Network</span><span>{RUNTIME.chain.name}</span></div>
                 <div className="ritual-row"><span>Gate State</span><span>SEALED</span></div>
               </div>
               <div className="success-actions">

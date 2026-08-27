@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAccount, usePublicClient } from "wagmi";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { useWalletModal } from "@/components/WalletModal";
 import { useRitual } from "@/components/RitualContext";
-import { RH_TESTNET_CHAIN } from "@/lib/chain";
 import { ASSETS, SITE } from "@/lib/siteConfig";
+import { RUNTIME } from "@/lib/runtime";
 import { useAssemblySupply } from "@/lib/useAssemblySupply";
 
 const OWNER_OF_ABI = [
@@ -34,8 +34,8 @@ function shortAddress(address?: string) {
 
 export function CollectionPage() {
   const { address, isConnected } = useAccount();
-  const publicClient = usePublicClient({ chainId: RH_TESTNET_CHAIN.id });
-  const { openConnectModal } = useConnectModal() ?? {};
+  const publicClient = usePublicClient({ chainId: RUNTIME.chain.id });
+  const { openWalletModal } = useWalletModal();
   const { open: openRitual } = useRitual();
   const { minted, progress } = useAssemblySupply();
 
@@ -80,6 +80,13 @@ export function CollectionPage() {
       return;
     }
 
+    if (!RUNTIME.contractConfigured) {
+      setMyIds([]);
+      setMyError("The Vessel contract is not configured for this environment.");
+      setLoadingMy(false);
+      return;
+    }
+
     if (minted === null || !publicClient) {
       setLoadingMy(true);
       return;
@@ -108,7 +115,7 @@ export function CollectionPage() {
           const end = Math.min(mintedCount, start + OWNER_SCAN_CHUNK - 1);
           const ids = Array.from({ length: end - start + 1 }, (_, index) => start + index);
           const contracts = ids.map((tokenId) => ({
-            address: SITE.contractAddress as `0x${string}`,
+            address: RUNTIME.contractAddress,
             abi: OWNER_OF_ABI,
             functionName: "ownerOf" as const,
             args: [BigInt(tokenId)] as const,
@@ -162,6 +169,18 @@ export function CollectionPage() {
 
   const renderEmptyState = () => {
     if (mode === "all") {
+      if (!RUNTIME.contractConfigured) {
+        return (
+          <div className="assembly-empty">
+            <div>
+              <div className="eyebrow">CONTRACT // NOT CONFIGURED</div>
+              <h2>The Assembly cannot be read.</h2>
+              <p>No Vessel contract is configured for this environment.</p>
+            </div>
+          </div>
+        );
+      }
+
       if (minted === null) {
         return (
           <div className="assembly-empty">
@@ -197,7 +216,7 @@ export function CollectionPage() {
             <div className="eyebrow">MY VESSELS // LOCKED</div>
             <h2>Identify yourself.</h2>
             <p>Connect a wallet to read the Vessels currently held by that address.</p>
-            <button className="btn primary" onClick={() => openConnectModal?.()}>
+            <button className="btn primary" onClick={openWalletModal}>
               Connect Wallet
             </button>
           </div>

@@ -1,4 +1,4 @@
-// Robinhood Chain config (verified via rh-chain-token-launch skill)
+// Robinhood Chain mainnet.
 export const RH_CHAIN = {
   id: 4663,
   name: "Robinhood Chain",
@@ -11,7 +11,7 @@ export const RH_CHAIN = {
   },
 } as const;
 
-// Robinhood Testnet
+// Robinhood Chain testnet.
 export const RH_TESTNET_CHAIN = {
   id: 46630,
   name: "Robinhood Testnet",
@@ -23,10 +23,6 @@ export const RH_TESTNET_CHAIN = {
     default: { name: "Blockscout", url: "https://explorer.testnet.chain.robinhood.com" },
   },
 } as const;
-
-// Set after deploy (Vercel project env).
-export const CONTRACT_ADDRESS: string =
-  process.env.NEXT_PUBLIC_NULLRITE_ADDRESS ?? "";
 
 export const IPFS_GATEWAY: string =
   process.env.NEXT_PUBLIC_IPFS_GATEWAY ?? "https://ipfs.io/ipfs/";
