@@ -3,17 +3,12 @@
 import { useEffect, useRef } from "react";
 import { ASSETS } from "@/lib/siteConfig";
 
-/**
- * v15 EXACT port — dual-video seam crossfade + mouse parallax + enter transition.
- * Mirrors /home/ubuntu/v15_ref/app.js behavior 1:1.
- */
 export function IntroGate({ onEnter }: { onEnter: () => void }) {
   const introRef = useRef<HTMLDivElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
   const loopARef = useRef<HTMLVideoElement>(null);
   const loopBRef = useRef<HTMLVideoElement>(null);
 
-  // keep the latest onEnter without re-running the effect
   const onEnterRef = useRef(onEnter);
   onEnterRef.current = onEnter;
 
@@ -34,7 +29,6 @@ export function IntroGate({ onEnter }: { onEnter: () => void }) {
       if (p && typeof p.catch === "function") p.catch(() => {});
     };
 
-    // prepareLoop
     [loopA, loopB].forEach((v) => {
       v.muted = true;
       v.playsInline = true;
@@ -55,10 +49,7 @@ export function IntroGate({ onEnter }: { onEnter: () => void }) {
         standbyLoop.classList.add("active");
         safePlay(standbyLoop);
 
-        setTimeout(() => {
-          activeLoop.classList.remove("active");
-        }, 20);
-
+        setTimeout(() => activeLoop.classList.remove("active"), 20);
         setTimeout(() => {
           activeLoop.pause();
           activeLoop.currentTime = 0;
@@ -87,7 +78,6 @@ export function IntroGate({ onEnter }: { onEnter: () => void }) {
       introMedia.style.transform = "";
       intro.classList.add("entering");
 
-      // Dashboard begins to appear while the viewport is fully inside the dark gate.
       setTimeout(() => {
         onEnterRef.current?.();
         window.scrollTo({ top: 0 });
@@ -111,29 +101,13 @@ export function IntroGate({ onEnter }: { onEnter: () => void }) {
       loopA.pause();
       loopB.pause();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="intro" id="introGate" ref={introRef}>
       <div className="intro-media" id="introMedia" ref={mediaRef}>
-        <video
-          className="loop-layer active"
-          id="loopA"
-          ref={loopARef}
-          src={ASSETS.gateLoop}
-          autoPlay
-          muted
-          playsInline
-        />
-        <video
-          className="loop-layer"
-          id="loopB"
-          ref={loopBRef}
-          src={ASSETS.gateLoop}
-          muted
-          playsInline
-        />
+        <video className="loop-layer active" id="loopA" ref={loopARef} src={ASSETS.gateLoop} autoPlay muted playsInline />
+        <video className="loop-layer" id="loopB" ref={loopBRef} src={ASSETS.gateLoop} muted playsInline />
       </div>
       <div className="gate-warp" id="gateWarp" />
       <div className="gate-blackout" id="gateBlackout" />
@@ -143,9 +117,7 @@ export function IntroGate({ onEnter }: { onEnter: () => void }) {
         <span className="sys">SYSTEM // ENTRY</span>
       </div>
       <div className="enter-zone">
-        <button className="enter" id="enterBtn">
-          ENTER THE RITE
-        </button>
+        <button className="enter" id="enterBtn">ENTER NULL RITE</button>
         <small>THE GATE IS WATCHING</small>
       </div>
     </div>

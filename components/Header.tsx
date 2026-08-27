@@ -5,7 +5,7 @@ import { WalletButton } from "@/components/WalletButton";
 
 const NAV = [
   { key: "home", label: "Home", href: "#top" },
-  { key: "mint", label: "Mint", href: "#mint" },
+  { key: "mint", label: "Summoning", href: "#summoning" },
   { key: "collection", label: "Collection", href: "#collection" },
   { key: "gate", label: "Gate", href: "#gate" },
   { key: "docs", label: "Docs", href: "#docs" },

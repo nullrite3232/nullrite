@@ -4,6 +4,19 @@ Status: **LOCKED FOR PUBLIC DOCS**
 
 This file records the public-facing system decisions approved for NULL RITE. Gate-specific numbers remain intentionally configurable and must be disclosed before each Gate opens.
 
+## Public presentation state
+
+- The public website remains **PRE-LAUNCH** until the production Summoning phase is explicitly opened.
+- Public Summoning is sealed during pre-launch.
+- Development-state mint activity and development contract counts must not be represented as the public Assembly.
+- The production Vessel contract, public mint price and public limits are published before Public Summoning opens.
+- Public copy does not describe a development network as the live Robinhood Chain product state.
+- `The Summoning` is the mint action. `The Gate` and the wider Rite are not used as mint CTA terminology.
+- Exact Gate choices, hidden paths and outcomes are not spoiled in public copy.
+- Token identity exists from Summoning; Reveal exposes born artwork, traits and rarity rather than creating token identity.
+- Public copy must not claim metadata is immutable unless production architecture actually guarantees immutability.
+- Display collection supply as **3232**, never `3,232`.
+
 ## Core identity
 
 - Collection: **3232 Vessels** on Robinhood Chain.

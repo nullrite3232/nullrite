@@ -1,36 +1,37 @@
-// NULL RITE — centralized site configuration (MASTER CONCEPT SPEC V1)
-// Spec §29: use configuration values, do NOT hardcode across files.
-// Anything marked TBA in the spec stays "" here until provided.
+// NULL RITE — centralized site configuration.
+// Public production is currently a pre-launch presentation. Development plumbing
+// may use a non-production contract, but public copy must not present it as a live mint.
 
 export const SITE = {
   name: "NULL RITE",
-  domain: "nullrite.xyz", // §23
+  domain: "nullrite.xyz",
   chainName: "Robinhood Chain",
   chainId: 4663,
   testnetChainId: 46630,
-  supply: 3232, // §27 TOTAL SUPPLY
-  maxMintPerWallet: 10, // §27
-  maxPerTx: 5, // on-chain verified (testnet): VesselNFT.maxPerTx() = 5
-  mintCurrency: "ETH", // §27
-  mintPriceEth: 0.0001, // on-chain verified (testnet): VesselNFT.mintPrice() = 0x5af3107a4000 = 0.0001 ETH
-  mintPriceLocked: false, // spec: placeholder unless explicitly confirmed
-  contractAddress: "0xd3E85fe5D282e1bc49F4A6B189272Ec874D29500", // Vessel NFT
+  supply: 3232,
+  publicPhase: "PRE_LAUNCH",
+  publicSummoningEnabled: false,
+  maxMintPerWallet: 10,
+  maxPerTx: 5,
+  mintCurrency: "ETH",
+  mintPriceEth: 0.0001,
+  mintPriceLocked: false,
+  contractAddress: "0xd3E85fe5D282e1bc49F4A6B189272Ec874D29500",
 } as const;
 
-// V1 live vs sealed states (§24, §27)
 export const STATE = {
-  reveal: "SEALED", // pre-reveal (§12)
-  gate: "SEALED", // §19 current V1
-  rite: "DORMANT", // $RITE §6
-  gateComing: "RESONANCE", // coming state §26
+  summoning: "SEALED",
+  reveal: "SEALED",
+  gate: "SEALED",
+  rite: "DORMANT",
+  gateComing: "RESONANCE",
 } as const;
 
-// Locked terminology (§26)
 export const TERMS = {
   nft: "VESSEL",
   mint: "THE SUMMONING",
   mintCta: "SUMMON A VESSEL",
-  mintAction: "BEGIN THE RITE",
+  mintAction: "SUMMON A VESSEL",
   mintPriceLabel: "SUMMONING COST",
   postMint: "A VESSEL HAS ANSWERED.",
   preReveal: "IDENTITY // SEALED",
@@ -51,10 +52,9 @@ export const SOCIALS = {
 
 export const IPFS = {
   gateway: "https://gateway.lighthouse.storage/ipfs/",
-  collectionCID: "QmXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", // TODO: replace with actual CID after upload
+  collectionCID: "QmXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
 } as const;
 
-// v15 media assets — hosted on Cloudinary (replaces v13 inline base64)
 export const ASSETS = {
   gateLoop:
     "https://res.cloudinary.com/ugbfexbl/video/upload/v1787805853/gate-loop-web-optimized.mp4",
