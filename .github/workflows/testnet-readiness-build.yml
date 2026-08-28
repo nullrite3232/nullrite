@@ -19,5 +19,7 @@ jobs:
         run: npm install
       - name: VesselNFT contract tests
         run: npm run contract:test
+      - name: Phase D helper syntax
+        run: npm run phase-d:check
       - name: Build
         run: npm run build
