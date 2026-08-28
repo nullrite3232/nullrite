@@ -49,7 +49,7 @@ export function SummoningPreviewOverlay({
               </div>
 
               <p className="resonance-note">
-                The production contract, live price and public limits will be disclosed before Summoning opens.
+                The Vessel contract, mint price and public limits will be disclosed before Summoning opens.
               </p>
 
               <div className="ritual-actions">

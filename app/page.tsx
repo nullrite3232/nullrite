@@ -215,7 +215,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="resonance-terminal" aria-label="Resonance protocol preview">
+              <div className="resonance-terminal" aria-label="Resonance protocol">
                 <div className="resonance-terminal-head">GATE PROTOCOL // SEALED</div>
                 <div className="resonance-line"><span>Entry</span><strong>VESSEL</strong></div>
                 <div className="resonance-line"><span>Offering</span><strong>IF REQUIRED</strong></div>
@@ -246,7 +246,7 @@ export default function Home() {
             </div>
             <div className="duo">
               <div className="panel">
-                <div className="eyebrow">VESSEL // SAMPLE RECORD</div>
+                <div className="eyebrow">VESSEL // SEALED RECORD</div>
                 <h3>BORN</h3>
                 <p>Born metadata remains the Vessel&apos;s original visual identity.</p>
                 <div className="record-lines">
@@ -256,7 +256,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="panel" id="gate-teaser">
-                <div className="eyebrow">GATE // FUTURE STATE</div>
+                <div className="eyebrow">GATE // SEALED</div>
                 <h3>THE RECORD</h3>
                 <p>
                   Once the Gate opens, sealed decisions can permanently affect what future Gates show that Vessel.

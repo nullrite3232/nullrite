@@ -103,7 +103,7 @@ function cleanError(message?: string) {
     return "Connection request rejected in wallet.";
   }
   if (/provider not found/i.test(firstLine)) {
-    return "No usable browser wallet provider was found for that option.";
+    return "No usable browser wallet was found for that option.";
   }
   return firstLine;
 }
@@ -251,9 +251,9 @@ export function WalletModalProvider({ children }: { children: ReactNode }) {
     const description =
       options?.description ??
       (options?.walletConnect
-        ? "Mobile handoff / QR fallback"
+        ? "Mobile wallet / QR"
         : options?.browser
-          ? "Legacy injected provider fallback"
+          ? "Detected browser wallet"
           : /okx|okex/i.test(item.name)
             ? "Installed // recommended"
             : "Installed wallet");
@@ -362,9 +362,7 @@ export function WalletModalProvider({ children }: { children: ReactNode }) {
                 <div className="eyebrow">CONNECT TO NULL RITE</div>
                 <h2>Choose your wallet.</h2>
                 <p>
-                  Installed wallets are discovered through EIP-6963 and connect to
-                  the exact provider you select. Mobile and QR access uses the
-                  explicit WalletConnect fallback below.
+                  Choose an installed wallet, or continue through WalletConnect on mobile.
                 </p>
 
                 {installedConnectors.length > 0 && (
@@ -382,7 +380,7 @@ export function WalletModalProvider({ children }: { children: ReactNode }) {
                     target ? (
                       renderConnector(target, {
                         label: wallet.name,
-                        description: "Installed // exact provider",
+                        description: "Installed // ready",
                       })
                     ) : (
                       <a
@@ -418,7 +416,7 @@ export function WalletModalProvider({ children }: { children: ReactNode }) {
 
                 {browserFallback && (
                   <>
-                    <div className="eyebrow">MORE / LEGACY</div>
+                    <div className="eyebrow">MORE</div>
                     <div className="wallet-options">
                       {renderConnector(browserFallback, { browser: true })}
                     </div>
@@ -427,15 +425,14 @@ export function WalletModalProvider({ children }: { children: ReactNode }) {
 
                 {installedConnectors.length === 0 && !browserFallback && (
                   <div className="wallet-project-note">
-                    NO INSTALLED WALLET PROVIDER DETECTED. USE MOBILE / QR OR INSTALL
-                    A SUPPORTED EVM WALLET.
+                    NO INSTALLED WALLET DETECTED. USE MOBILE / QR OR INSTALL A
+                    SUPPORTED EVM WALLET.
                   </div>
                 )}
 
                 {!walletConnectConfigured && (
                   <div className="wallet-project-note">
-                    MOBILE / QR IS DISABLED BECAUSE NO WALLETCONNECT PROJECT ID IS
-                    CONFIGURED FOR THIS NETWORK.
+                    MOBILE / QR IS CURRENTLY UNAVAILABLE.
                   </div>
                 )}
 
@@ -446,9 +443,7 @@ export function WalletModalProvider({ children }: { children: ReactNode }) {
                 )}
 
                 <div className="wallet-modal-foot">
-                  Installed-wallet selection is isolated through EIP-6963. The
-                  legacy browser fallback is intentionally separate because it may
-                  represent whichever provider owns window.ethereum.
+                  Connection and transaction requests are always confirmed inside your wallet.
                 </div>
               </div>
             )}

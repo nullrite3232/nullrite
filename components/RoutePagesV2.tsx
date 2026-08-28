@@ -3,7 +3,7 @@
 import { PublicCollectionPage } from "@/components/PublicCollectionPage";
 
 const DOC_NAV = [
-  ["docs-current", "Current State"],
+  ["docs-current", "Protocol State"],
   ["docs-overview", "Overview"],
   ["docs-vessels", "Vessels"],
   ["docs-rite", "$RITE"],
@@ -43,7 +43,7 @@ export function RoutePagesV2() {
                 Vessel&apos;s Record already contains.
               </p>
 
-              <div className="gate-protocol-grid" aria-label="Sealed Gate protocol preview">
+              <div className="gate-protocol-grid" aria-label="Sealed Gate protocol">
                 <div className="gate-protocol-cell"><span>Decisions</span><strong>IRREVERSIBLE</strong></div>
                 <div className="gate-protocol-cell"><span>Offering</span><strong className="burn">IF REQUIRED // BURNED</strong></div>
                 <div className="gate-protocol-cell"><span>Completion</span><strong>PUBLISHED CONDITIONS</strong></div>
@@ -82,25 +82,22 @@ export function RoutePagesV2() {
 
             <div className="docs-content">
               <article id="docs-current">
-                <div className="docs-status"><i></i>Current State // Pre-Launch</div>
-                <h2>THE CURRENT STATE</h2>
+                <div className="docs-status"><i></i>Protocol State // Onchain</div>
+                <h2>THE PROTOCOL STATE</h2>
                 <p>
-                  NULL RITE is currently presented in its pre-launch state. The
-                  public collection is fixed at 3232 Vessels, but Public Summoning
-                  has not begun and no development-state mint count is presented as
-                  part of the public Assembly.
+                  NULL RITE progresses through distinct public states. The collection
+                  is fixed at 3232 Vessels, and the interface follows the active
+                  Vessel contract for Summoning and Reveal state.
                 </p>
                 <p>
-                  $RITE remains sealed. The Summoning remains sealed. The Reveal
-                  remains sealed. The Gate remains sealed. Each layer opens as its
-                  production state is announced.
+                  $RITE, Summoning, Reveal and the Gate are separate layers. Each
+                  remains sealed until its public state opens.
                 </p>
                 <div className="docs-spec">
-                  <div className="ritual-row"><span>Public Phase</span><span>PRE-LAUNCH</span></div>
-                  <div className="ritual-row"><span>$RITE</span><span>SEALED</span></div>
-                  <div className="ritual-row"><span>Summoning</span><span>SEALED</span></div>
-                  <div className="ritual-row"><span>Reveal</span><span>SEALED</span></div>
-                  <div className="ritual-row"><span>Gate</span><span>SEALED</span></div>
+                  <div className="ritual-row"><span>Supply</span><span>3232 VESSELS</span></div>
+                  <div className="ritual-row"><span>Summoning</span><span>LIVE CONTRACT STATE</span></div>
+                  <div className="ritual-row"><span>Reveal</span><span>LIVE CONTRACT STATE</span></div>
+                  <div className="ritual-row"><span>Gate</span><span>SEALED UNTIL OPENED</span></div>
                 </div>
               </article>
 
@@ -124,8 +121,8 @@ export function RoutePagesV2() {
                 <div className="docs-status"><i></i>Identity Layer</div>
                 <h2>THE VESSEL</h2>
                 <p>
-                  Only 3232 Vessels will exist. When Public Summoning begins, each
-                  Vessel receives a sequential token identity onchain and enters the
+                  Only 3232 Vessels will exist. During Public Summoning, each Vessel
+                  receives a sequential token identity onchain and enters the
                   Assembly visually sealed.
                 </p>
                 <p>
@@ -158,22 +155,21 @@ export function RoutePagesV2() {
               </article>
 
               <article id="docs-summoning">
-                <div className="docs-status"><i></i>Public Mint // Sealed</div>
+                <div className="docs-status"><i></i>Public Mint</div>
                 <h2>THE SUMMONING</h2>
                 <p>
                   The Summoning is how a Vessel enters NULL RITE. Public Summoning
-                  will take place through the NULL RITE interface using ETH.
+                  takes place through the NULL RITE interface using ETH.
                 </p>
                 <p>
-                  Before it opens, the production contract, mint price,
-                  per-transaction limit and per-wallet limit will be disclosed. The
-                  live interface will read the production contract state directly.
+                  The interface reads the active Vessel contract directly. Mint
+                  price, per-transaction limits and per-wallet limits are enforced
+                  onchain whenever Public Summoning is open.
                 </p>
                 <div className="docs-spec">
-                  <div className="ritual-row"><span>Current State</span><span>SEALED</span></div>
                   <div className="ritual-row"><span>Mint Currency</span><span>ETH</span></div>
-                  <div className="ritual-row"><span>Production Contract</span><span>PUBLISHED BEFORE OPEN</span></div>
-                  <div className="ritual-row"><span>Price & Limits</span><span>DISCLOSED BEFORE OPEN</span></div>
+                  <div className="ritual-row"><span>Vessel Contract</span><span>ONCHAIN</span></div>
+                  <div className="ritual-row"><span>Price & Limits</span><span>ENFORCED ONCHAIN</span></div>
                 </div>
               </article>
 
@@ -182,9 +178,8 @@ export function RoutePagesV2() {
                 <h2>THE ASSEMBLY</h2>
                 <p>
                   The Assembly is the public archive of Vessels confirmed through
-                  Public Summoning. Once that phase opens, ALL VESSELS will show the
-                  public Assembly and MY VESSELS will isolate the Vessels held by the
-                  connected wallet.
+                  Public Summoning. ALL VESSELS shows the public Assembly and MY
+                  VESSELS isolates the Vessels held by the connected wallet.
                 </p>
                 <p>
                   Before Reveal, identities remain visually sealed. Reveal does not
@@ -393,20 +388,20 @@ export function RoutePagesV2() {
               </article>
 
               <article id="docs-onchain">
-                <div className="docs-status"><i></i>Production Transparency</div>
+                <div className="docs-status"><i></i>Protocol Transparency</div>
                 <h2>ONCHAIN</h2>
                 <p>
-                  At production launch, ownership, Summoning, Reveal verification,
-                  Gate decisions, accepted Offerings and announced Pool rules are
-                  intended to leave verifiable references rather than rely only on
-                  interface copy. Production addresses are published before the
-                  relevant public phase opens.
+                  Ownership, Summoning, Reveal verification, Gate decisions,
+                  accepted Offerings and announced Pool rules are designed to leave
+                  verifiable references rather than rely only on interface copy.
+                  Relevant contract addresses and rules are published with each
+                  public phase.
                 </p>
                 <div className="docs-spec">
                   <div className="ritual-row"><span>Network</span><span>ROBINHOOD CHAIN</span></div>
                   <div className="ritual-row"><span>Collection</span><span>3232 VESSELS</span></div>
                   <div className="ritual-row"><span>Mint Currency</span><span>ETH</span></div>
-                  <div className="ritual-row"><span>Production Contract</span><span>PUBLISHED BEFORE SUMMONING</span></div>
+                  <div className="ritual-row"><span>Vessel Contract</span><span>PUBLISHED WITH SUMMONING</span></div>
                   <div className="ritual-row"><span>Reveal</span><span>PROVENANCE + PUBLIC SEED</span></div>
                   <div className="ritual-row"><span>Offerings</span><span>VERIFIABLE BURNS</span></div>
                   <div className="ritual-row"><span>Main Gate Pools</span><span>DISCLOSED BEFORE ENTRY</span></div>
@@ -418,7 +413,7 @@ export function RoutePagesV2() {
                 <h2>FAQ</h2>
 
                 <h3 className="docs-subhead">Can I summon a Vessel now?</h3>
-                <p>No. Public Summoning is currently sealed. Its production contract, price and limits will be disclosed before it opens.</p>
+                <p>Public Summoning follows the live contract state shown in the interface. When it is open, the active price and limits are enforced by the Vessel contract.</p>
 
                 <h3 className="docs-subhead">What do I receive when I summon a Vessel?</h3>
                 <p>An onchain Vessel capable of participating in NULL RITE. Its born artwork, traits and rarity remain sealed until The Reveal.</p>
