@@ -50,6 +50,13 @@ function friendlyTxError(message?: string) {
     return "Insufficient ETH for this summoning.";
   }
   if (
+    lower.includes("chain mismatch") ||
+    lower.includes("does not match the target chain") ||
+    lower.includes("network switch was not confirmed")
+  ) {
+    return `Switch the connected wallet to ${RUNTIME.chain.name} (chain ${RUNTIME.chain.id}) and try again.`;
+  }
+  if (
     lower.includes("mint inactive") ||
     lower.includes("mint is not active") ||
     lower.includes("public mint")
@@ -68,6 +75,49 @@ function friendlyTxError(message?: string) {
   return message.split("\n")[0] || "Transaction failed.";
 }
 
+function normalizeChainId(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "bigint") return Number(value);
+  if (typeof value === "string") {
+    const parsed = value.startsWith("0x")
+      ? Number.parseInt(value.slice(2), 16)
+      : Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+async function waitForWalletChain(connector: any, expectedChainId: number) {
+  const deadline = Date.now() + 5_000;
+  let lastSeen: number | null = null;
+
+  while (Date.now() < deadline) {
+    try {
+      const connectorChainId = normalizeChainId(await connector?.getChainId?.());
+      if (connectorChainId !== null) lastSeen = connectorChainId;
+      if (connectorChainId === expectedChainId) return;
+    } catch {
+      // Fall through to the raw provider check.
+    }
+
+    try {
+      const provider = await connector?.getProvider?.();
+      const rawChainId = await provider?.request?.({ method: "eth_chainId" });
+      const providerChainId = normalizeChainId(rawChainId);
+      if (providerChainId !== null) lastSeen = providerChainId;
+      if (providerChainId === expectedChainId) return;
+    } catch {
+      // Retry briefly because some injected wallets update asynchronously.
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  }
+
+  throw new Error(
+    `Wallet network switch was not confirmed. Current chain: ${lastSeen ?? "unknown"}; required chain: ${expectedChainId}.`
+  );
+}
+
 export function RitualOverlay({
   open,
   onClose,
@@ -75,7 +125,7 @@ export function RitualOverlay({
   open: boolean;
   onClose: () => void;
 }) {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector } = useAccount();
   const chainId = useChainId();
   const { openWalletModal } = useWalletModal();
   const { switchChainAsync } = useSwitchChain();
@@ -263,6 +313,9 @@ export function RitualOverlay({
     try {
       if (chainId !== RUNTIME.chain.id) {
         await switchChainAsync({ chainId: RUNTIME.chain.id });
+        await waitForWalletChain(connector, RUNTIME.chain.id);
+      } else {
+        await waitForWalletChain(connector, RUNTIME.chain.id);
       }
 
       setStage("signature");
@@ -378,6 +431,7 @@ export function RitualOverlay({
               <div className="ritual-data">
                 <div className="ritual-row"><span>Summoning Cost</span><span id="sumCost">{cost} ETH</span></div>
                 <div className="ritual-row"><span>Network</span><span>{RUNTIME.chain.name}</span></div>
+                <div className="ritual-row"><span>Wallet Network</span><span>{!isConnected ? "NOT CONNECTED" : chainId === RUNTIME.chain.id ? "READY" : `SWITCH REQUIRED // CHAIN ${chainId}`}</span></div>
                 <div className="ritual-row"><span>Summoning State</span><span>{publicMintActive ? "OPEN" : "SEALED"}</span></div>
                 <div className="ritual-row"><span>Wallet Allowance</span><span>{allowanceLabel}</span></div>
                 <div className="ritual-row"><span>Contract Rules</span><span>{contractStateSynced ? "ONCHAIN // LIVE" : isContractStateLoading ? "SYNCING" : "UNAVAILABLE"}</span></div>
