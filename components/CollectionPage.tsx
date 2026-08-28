@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAccount, usePublicClient } from "wagmi";
 import { useWalletModal } from "@/components/WalletModal";
 import { useRitual } from "@/components/RitualContext";
+import { VesselDetailModal } from "@/components/VesselDetailModal";
 import { ASSETS, SITE } from "@/lib/siteConfig";
 import { RUNTIME } from "@/lib/runtime";
 import { useProtocolPhase } from "@/lib/useProtocolPhase";
@@ -84,6 +85,7 @@ export function CollectionPage() {
   const [loadingMy, setLoadingMy] = useState(false);
   const [myError, setMyError] = useState<string | null>(null);
   const [scanNonce, setScanNonce] = useState(0);
+  const [selectedVesselId, setSelectedVesselId] = useState<number | null>(null);
 
   const mintedCount = Math.max(0, Math.min(minted ?? 0, SITE.supply));
 
@@ -148,9 +150,6 @@ export function CollectionPage() {
       const target = address.toLowerCase();
 
       try {
-        // Read the wallet's current ERC-721 balance first. This gives the scan a
-        // hard completion target and avoids scanning all 3232 IDs when the
-        // wallet's Vessels are found early.
         const rawBalance = await publicClient.readContract({
           address: RUNTIME.contractAddress,
           abi: OWNERSHIP_ABI,
@@ -167,11 +166,6 @@ export function CollectionPage() {
           return;
         }
 
-        // Robinhood is configured as a custom Viem chain and currently has no
-        // Multicall3 contract address in the chain definition. Scan ownerOf
-        // directly in small concurrent groups instead of depending on
-        // publicClient.multicall(). Newest IDs are checked first so recently
-        // summoned Vessels appear quickly; results are sorted before display.
         for (
           let chunkEnd = mintedCount;
           chunkEnd >= 1 && found.length < expectedBalance;
@@ -208,8 +202,6 @@ export function CollectionPage() {
           }
         }
 
-        // balanceOf and ownerOf are both canonical ERC-721 reads. If they do not
-        // reconcile, fail closed instead of silently showing an incomplete list.
         if (found.length !== expectedBalance) {
           throw new Error(
             `Ownership scan incomplete: expected ${expectedBalance}, found ${found.length}.`
@@ -458,7 +450,13 @@ export function CollectionPage() {
           <>
             <div className="assembly-grid">
               {displayedIds.map((id) => (
-                <article className="assembly-card" key={id}>
+                <button
+                  className="assembly-card assembly-card-button"
+                  key={id}
+                  type="button"
+                  onClick={() => setSelectedVesselId(id)}
+                  aria-label={`View Vessel #${padTokenId(id)}`}
+                >
                   <div className="assembly-card-media">
                     <img src={ASSETS.sealedVessel} alt={`Sealed Vessel #${padTokenId(id)}`} />
                   </div>
@@ -466,7 +464,7 @@ export function CollectionPage() {
                     <strong>VESSEL #{padTokenId(id)}</strong>
                     <span>IDENTITY // SEALED</span>
                   </div>
-                </article>
+                </button>
               ))}
             </div>
 
@@ -482,6 +480,11 @@ export function CollectionPage() {
           renderEmptyState()
         )}
       </div>
+
+      <VesselDetailModal
+        tokenId={selectedVesselId}
+        onClose={() => setSelectedVesselId(null)}
+      />
     </section>
   );
 }
