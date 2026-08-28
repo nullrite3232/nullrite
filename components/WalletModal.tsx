@@ -8,11 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import {
-  useAccount,
-  useConnect,
-  useDisconnect,
-} from "wagmi";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { walletConnectConfigured } from "@/lib/wallet";
 import { useProtocolPhase } from "@/lib/useProtocolPhase";
 
@@ -20,6 +16,46 @@ type WalletModalContextValue = {
   openWalletModal: () => void;
   closeWalletModal: () => void;
 };
+
+type PopularWallet = {
+  key: string;
+  name: string;
+  match: readonly string[];
+  href: string;
+};
+
+const POPULAR_WALLETS: readonly PopularWallet[] = [
+  {
+    key: "metamask",
+    name: "MetaMask",
+    match: ["metamask"],
+    href: "https://metamask.io/download/",
+  },
+  {
+    key: "rabby",
+    name: "Rabby",
+    match: ["rabby"],
+    href: "https://rabby.io/",
+  },
+  {
+    key: "okx",
+    name: "OKX Wallet",
+    match: ["okx", "okex"],
+    href: "https://www.okx.com/web3",
+  },
+  {
+    key: "binance",
+    name: "Binance Wallet",
+    match: ["binance"],
+    href: "https://www.binance.com/en/web3wallet",
+  },
+  {
+    key: "coinbase",
+    name: "Coinbase Wallet",
+    match: ["coinbase"],
+    href: "https://www.coinbase.com/wallet",
+  },
+] as const;
 
 const WalletModalContext = createContext<WalletModalContextValue>({
   openWalletModal: () => {},
@@ -32,7 +68,7 @@ export function useWalletModal() {
 
 function scoreConnector(name: string, id: string) {
   const key = `${name} ${id}`.toLowerCase();
-  if (key.includes("okx")) return 0;
+  if (key.includes("okx") || key.includes("okex")) return 0;
   if (key.includes("rabby")) return 1;
   if (key.includes("metamask")) return 2;
   if (key.includes("binance")) return 3;
@@ -49,6 +85,15 @@ function isWalletConnectConnector(name: string, id: string) {
 function isGenericInjectedConnector(name: string, id: string) {
   const key = `${name} ${id}`.toLowerCase();
   return key === "injected injected" || key.includes("injected injected");
+}
+
+function matchesPopularWallet(
+  name: string,
+  id: string,
+  wallet: PopularWallet
+) {
+  const key = `${name} ${id}`.toLowerCase();
+  return wallet.match.some((needle) => key.includes(needle));
 }
 
 function cleanError(message?: string) {
@@ -129,6 +174,18 @@ export function WalletModalProvider({ children }: { children: ReactNode }) {
     [hasLegacyProvider, orderedConnectors]
   );
 
+  const popularWallets = useMemo(
+    () =>
+      POPULAR_WALLETS.map((wallet) => ({
+        wallet,
+        connector:
+          installedConnectors.find((item) =>
+            matchesPopularWallet(item.name, item.id, wallet)
+          ) ?? null,
+      })),
+    [installedConnectors]
+  );
+
   const connect = async (target: (typeof connectors)[number]) => {
     setLocalError(null);
     setPendingUid(target.uid);
@@ -163,26 +220,35 @@ export function WalletModalProvider({ children }: { children: ReactNode }) {
 
   const renderConnector = (
     item: (typeof connectors)[number],
-    options?: { walletConnect?: boolean; browser?: boolean }
+    options?: {
+      walletConnect?: boolean;
+      browser?: boolean;
+      label?: string;
+      description?: string;
+    }
   ) => {
     const waiting = isPending && pendingUid === item.uid;
-    const label = options?.walletConnect
-      ? "WalletConnect"
-      : options?.browser
-        ? "Browser Wallet"
-        : item.name;
-    const description = options?.walletConnect
-      ? "Mobile handoff / QR fallback"
-      : options?.browser
-        ? "Legacy injected provider fallback"
-        : /okx/i.test(item.name)
-          ? "Installed // recommended"
-          : "Installed wallet";
+    const label =
+      options?.label ??
+      (options?.walletConnect
+        ? "WalletConnect"
+        : options?.browser
+          ? "Browser Wallet"
+          : item.name);
+    const description =
+      options?.description ??
+      (options?.walletConnect
+        ? "Mobile handoff / QR fallback"
+        : options?.browser
+          ? "Legacy injected provider fallback"
+          : /okx|okex/i.test(item.name)
+            ? "Installed // recommended"
+            : "Installed wallet");
 
     return (
       <button
         className={`wallet-option ${options?.walletConnect ? "wallet-option-more" : ""}`}
-        key={item.uid}
+        key={`${item.uid}:${label}`}
         disabled={isPending}
         onClick={() => void connect(item)}
       >
@@ -284,8 +350,8 @@ export function WalletModalProvider({ children }: { children: ReactNode }) {
                 <h2>Choose your wallet.</h2>
                 <p>
                   Installed wallets are discovered through EIP-6963 and connect to
-                  the exact provider you select. Network switching happens only when
-                  an onchain action requires it.
+                  the exact provider you select. Mobile and QR access uses the
+                  explicit WalletConnect fallback below.
                 </p>
 
                 {installedConnectors.length > 0 && (
@@ -297,14 +363,34 @@ export function WalletModalProvider({ children }: { children: ReactNode }) {
                   </>
                 )}
 
-                {browserFallback && (
-                  <>
-                    <div className="eyebrow">BROWSER FALLBACK</div>
-                    <div className="wallet-options">
-                      {renderConnector(browserFallback, { browser: true })}
-                    </div>
-                  </>
-                )}
+                <div className="eyebrow">POPULAR</div>
+                <div className="wallet-options">
+                  {popularWallets.map(({ wallet, connector: target }) =>
+                    target ? (
+                      renderConnector(target, {
+                        label: wallet.name,
+                        description: "Installed // exact provider",
+                      })
+                    ) : (
+                      <a
+                        className="wallet-option wallet-option-more"
+                        href={wallet.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        key={wallet.key}
+                      >
+                        <span className="wallet-option-icon">
+                          {wallet.name.slice(0, 2).toUpperCase()}
+                        </span>
+                        <span className="wallet-option-copy">
+                          <strong>{wallet.name}</strong>
+                          <small>Not installed // get wallet</small>
+                        </span>
+                        <span className="wallet-option-arrow">↗</span>
+                      </a>
+                    )
+                  )}
+                </div>
 
                 {walletConnectors.length > 0 && (
                   <>
@@ -317,17 +403,26 @@ export function WalletModalProvider({ children }: { children: ReactNode }) {
                   </>
                 )}
 
+                {browserFallback && (
+                  <>
+                    <div className="eyebrow">MORE / LEGACY</div>
+                    <div className="wallet-options">
+                      {renderConnector(browserFallback, { browser: true })}
+                    </div>
+                  </>
+                )}
+
                 {installedConnectors.length === 0 && !browserFallback && (
                   <div className="wallet-project-note">
-                    NO INSTALLED WALLET PROVIDER DETECTED. CHECK THE WALLET EXTENSION
-                    PERMISSION FOR THIS SITE, THEN REOPEN THIS WINDOW.
+                    NO INSTALLED WALLET PROVIDER DETECTED. USE MOBILE / QR OR INSTALL
+                    A SUPPORTED EVM WALLET.
                   </div>
                 )}
 
                 {!walletConnectConfigured && (
                   <div className="wallet-project-note">
-                    MOBILE HANDOFF // A REOWN / WALLETCONNECT PROJECT ID MUST BE
-                    CONFIGURED BEFORE PUBLIC LAUNCH.
+                    MOBILE / QR IS DISABLED BECAUSE NO WALLETCONNECT PROJECT ID IS
+                    CONFIGURED FOR THIS NETWORK.
                   </div>
                 )}
 
@@ -338,8 +433,9 @@ export function WalletModalProvider({ children }: { children: ReactNode }) {
                 )}
 
                 <div className="wallet-modal-foot">
-                  EIP-6963 is the primary installed-wallet path. Browser Wallet is
-                  shown only when a legacy injected provider actually exists.
+                  Installed-wallet selection is isolated through EIP-6963. The
+                  legacy browser fallback is intentionally separate because it may
+                  represent whichever provider owns window.ethereum.
                 </div>
               </div>
             )}
