@@ -4,7 +4,15 @@ import { defineChain, getAddress, http, numberToHex } from "viem";
 import { RH_CHAIN, RH_TESTNET_CHAIN } from "@/lib/chain";
 import { RUNTIME } from "@/lib/runtime";
 
-const rawProjectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID?.trim() ?? "";
+const legacyProjectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID?.trim() ?? "";
+const testnetProjectId =
+  process.env.NEXT_PUBLIC_REOWN_PROJECT_ID_TESTNET?.trim() ?? "";
+const mainnetProjectId =
+  process.env.NEXT_PUBLIC_REOWN_PROJECT_ID_MAINNET?.trim() ?? "";
+
+const runtimeProjectId =
+  RUNTIME.chain.id === RH_TESTNET_CHAIN.id ? testnetProjectId : mainnetProjectId;
+const rawProjectId = runtimeProjectId || legacyProjectId;
 
 export const walletConnectConfigured = rawProjectId.length >= 24;
 export const walletProjectId = walletConnectConfigured ? rawProjectId : "";
