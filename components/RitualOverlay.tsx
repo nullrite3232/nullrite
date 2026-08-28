@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   useAccount,
-  useChainId,
   useSwitchChain,
   useWaitForTransactionReceipt,
   useWriteContract,
@@ -87,29 +86,31 @@ function normalizeChainId(value: unknown): number | null {
   return null;
 }
 
+async function readWalletChain(connector: any): Promise<number | null> {
+  try {
+    const provider = await connector?.getProvider?.();
+    const rawChainId = await provider?.request?.({ method: "eth_chainId" });
+    const providerChainId = normalizeChainId(rawChainId);
+    if (providerChainId !== null) return providerChainId;
+  } catch {
+    // Fall through to connector state.
+  }
+
+  try {
+    return normalizeChainId(await connector?.getChainId?.());
+  } catch {
+    return null;
+  }
+}
+
 async function waitForWalletChain(connector: any, expectedChainId: number) {
   const deadline = Date.now() + 5_000;
   let lastSeen: number | null = null;
 
   while (Date.now() < deadline) {
-    try {
-      const connectorChainId = normalizeChainId(await connector?.getChainId?.());
-      if (connectorChainId !== null) lastSeen = connectorChainId;
-      if (connectorChainId === expectedChainId) return;
-    } catch {
-      // Fall through to the raw provider check.
-    }
-
-    try {
-      const provider = await connector?.getProvider?.();
-      const rawChainId = await provider?.request?.({ method: "eth_chainId" });
-      const providerChainId = normalizeChainId(rawChainId);
-      if (providerChainId !== null) lastSeen = providerChainId;
-      if (providerChainId === expectedChainId) return;
-    } catch {
-      // Retry briefly because some injected wallets update asynchronously.
-    }
-
+    const liveChainId = await readWalletChain(connector);
+    if (liveChainId !== null) lastSeen = liveChainId;
+    if (liveChainId === expectedChainId) return;
     await new Promise((resolve) => setTimeout(resolve, 150));
   }
 
@@ -125,8 +126,12 @@ export function RitualOverlay({
   open: boolean;
   onClose: () => void;
 }) {
-  const { address, isConnected, connector } = useAccount();
-  const chainId = useChainId();
+  const {
+    address,
+    isConnected,
+    connector,
+    chainId: accountChainId,
+  } = useAccount();
   const { openWalletModal } = useWalletModal();
   const { switchChainAsync } = useSwitchChain();
   const {
@@ -311,12 +316,11 @@ export function RitualOverlay({
     }
 
     try {
-      if (chainId !== RUNTIME.chain.id) {
+      const liveChainId = await readWalletChain(connector);
+      if (liveChainId !== RUNTIME.chain.id) {
         await switchChainAsync({ chainId: RUNTIME.chain.id });
-        await waitForWalletChain(connector, RUNTIME.chain.id);
-      } else {
-        await waitForWalletChain(connector, RUNTIME.chain.id);
       }
+      await waitForWalletChain(connector, RUNTIME.chain.id);
 
       setStage("signature");
       await writeContractAsync({
@@ -389,6 +393,14 @@ export function RitualOverlay({
     !publicMintActive ||
     walletAllowance === 0;
 
+  const walletNetworkLabel = !isConnected
+    ? "NOT CONNECTED"
+    : accountChainId === RUNTIME.chain.id
+      ? "READY"
+      : accountChainId
+        ? `SWITCH REQUIRED // CHAIN ${accountChainId}`
+        : "CHECK ON SUMMON";
+
   return (
     <div className="ritual-overlay show" id="ritualOverlay">
       <div className="ritual-shell">
@@ -431,7 +443,7 @@ export function RitualOverlay({
               <div className="ritual-data">
                 <div className="ritual-row"><span>Summoning Cost</span><span id="sumCost">{cost} ETH</span></div>
                 <div className="ritual-row"><span>Network</span><span>{RUNTIME.chain.name}</span></div>
-                <div className="ritual-row"><span>Wallet Network</span><span>{!isConnected ? "NOT CONNECTED" : chainId === RUNTIME.chain.id ? "READY" : `SWITCH REQUIRED // CHAIN ${chainId}`}</span></div>
+                <div className="ritual-row"><span>Wallet Network</span><span>{walletNetworkLabel}</span></div>
                 <div className="ritual-row"><span>Summoning State</span><span>{publicMintActive ? "OPEN" : "SEALED"}</span></div>
                 <div className="ritual-row"><span>Wallet Allowance</span><span>{allowanceLabel}</span></div>
                 <div className="ritual-row"><span>Contract Rules</span><span>{contractStateSynced ? "ONCHAIN // LIVE" : isContractStateLoading ? "SYNCING" : "UNAVAILABLE"}</span></div>
