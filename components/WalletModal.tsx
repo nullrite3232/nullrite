@@ -187,14 +187,27 @@ export function WalletModalProvider({ children }: { children: ReactNode }) {
   );
 
   const connect = async (target: (typeof connectors)[number]) => {
+    const usesWalletConnect = isWalletConnectConnector(target.name, target.id);
     setLocalError(null);
     setPendingUid(target.uid);
+
+    if (usesWalletConnect && typeof window !== "undefined") {
+      // Remove the NULL RITE overlay before WalletConnect mounts its own modal.
+      // Waiting one animation frame prevents the two fullscreen layers from
+      // competing for z-index/focus on mobile browsers.
+      setIsOpen(false);
+      await new Promise<void>((resolve) =>
+        window.requestAnimationFrame(() => resolve())
+      );
+    }
+
     try {
       await connectAsync({ connector: target });
       setIsOpen(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setLocalError(cleanError(message));
+      if (usesWalletConnect) setIsOpen(true);
     } finally {
       setPendingUid(null);
     }
