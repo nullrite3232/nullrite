@@ -2,23 +2,17 @@ import { RH_TESTNET_CHAIN } from "@/lib/chain";
 import { RUNTIME } from "@/lib/runtime";
 
 const PUBLIC_SUPPLY = 3232;
-const rawRehearsalSupply = Number.parseInt(
-  process.env.NEXT_PUBLIC_NULLRITE_REHEARSAL_SUPPLY?.trim() ?? "",
-  10
-);
-const rehearsalSupply =
-  Number.isInteger(rawRehearsalSupply) &&
-  rawRehearsalSupply > 0 &&
-  rawRehearsalSupply <= PUBLIC_SUPPLY
-    ? rawRehearsalSupply
-    : null;
+
+// PHASE D REHEARSAL PREVIEW ONLY.
+// Testnet UI mirrors the 10-supply harness.
+// MUST NOT merge into main.
+const PHASE_D_REHEARSAL_SUPPLY = 10;
 
 // Rehearsal supply can only alter testnet UI math. Mainnet is hard-pinned to
 // the canonical 3232 Vessel supply regardless of environment input.
-const runtimeSupply =
-  RUNTIME.isTestnet && rehearsalSupply !== null
-    ? rehearsalSupply
-    : PUBLIC_SUPPLY;
+const runtimeSupply = RUNTIME.isTestnet
+  ? PHASE_D_REHEARSAL_SUPPLY
+  : PUBLIC_SUPPLY;
 
 // NULL RITE — centralized site configuration.
 // Runtime chain/address come from lib/runtime so testnet -> mainnet does not
@@ -34,7 +28,7 @@ export const SITE = {
   publicPhase: "PRE_LAUNCH",
   publicSummoningEnabled: false,
   maxMintPerWallet: 10,
-  maxPerTx: 5,
+  maxPerTx: 10,
   mintCurrency: "ETH",
   mintPriceEth: 0.0001,
   mintPriceLocked: false,
