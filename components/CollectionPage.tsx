@@ -8,7 +8,7 @@ import { ASSETS, SITE } from "@/lib/siteConfig";
 import { RUNTIME } from "@/lib/runtime";
 import { useProtocolPhase } from "@/lib/useProtocolPhase";
 
-const OWNER_OF_ABI = [
+const OWNERSHIP_ABI = [
   {
     type: "function",
     name: "ownerOf",
@@ -16,10 +16,18 @@ const OWNER_OF_ABI = [
     inputs: [{ name: "tokenId", type: "uint256" }],
     outputs: [{ name: "", type: "address" }],
   },
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [{ name: "owner", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
 ] as const;
 
 const PAGE_SIZE = 24;
-const OWNER_SCAN_CHUNK = 128;
+const OWNER_SCAN_CHUNK = 64;
+const DIRECT_READ_CONCURRENCY = 8;
 
 type CollectionMode = "all" | "mine";
 
@@ -30,6 +38,28 @@ function padTokenId(id: number) {
 function shortAddress(address?: string) {
   if (!address) return "";
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+async function readOwnerWithRetry(publicClient: any, tokenId: number) {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      return await publicClient.readContract({
+        address: RUNTIME.contractAddress,
+        abi: OWNERSHIP_ABI,
+        functionName: "ownerOf",
+        args: [BigInt(tokenId)],
+      });
+    } catch (error) {
+      lastError = error;
+      if (attempt === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 180));
+      }
+    }
+  }
+
+  throw lastError ?? new Error(`ownerOf(${tokenId}) failed`);
 }
 
 export function CollectionPage() {
@@ -118,36 +148,76 @@ export function CollectionPage() {
       const target = address.toLowerCase();
 
       try {
-        for (let start = 1; start <= mintedCount; start += OWNER_SCAN_CHUNK) {
+        // Read the wallet's current ERC-721 balance first. This gives the scan a
+        // hard completion target and avoids scanning all 3232 IDs when the
+        // wallet's Vessels are found early.
+        const rawBalance = await publicClient.readContract({
+          address: RUNTIME.contractAddress,
+          abi: OWNERSHIP_ABI,
+          functionName: "balanceOf",
+          args: [address],
+        });
+        const expectedBalance = Number(rawBalance);
+
+        if (expectedBalance === 0) {
+          if (!cancelled) {
+            setMyIds([]);
+            setLoadingMy(false);
+          }
+          return;
+        }
+
+        // Robinhood is configured as a custom Viem chain and currently has no
+        // Multicall3 contract address in the chain definition. Scan ownerOf
+        // directly in small concurrent groups instead of depending on
+        // publicClient.multicall(). Newest IDs are checked first so recently
+        // summoned Vessels appear quickly; results are sorted before display.
+        for (
+          let chunkEnd = mintedCount;
+          chunkEnd >= 1 && found.length < expectedBalance;
+          chunkEnd -= OWNER_SCAN_CHUNK
+        ) {
           if (cancelled) return;
 
-          const end = Math.min(mintedCount, start + OWNER_SCAN_CHUNK - 1);
-          const ids = Array.from({ length: end - start + 1 }, (_, index) => start + index);
-          const contracts = ids.map((tokenId) => ({
-            address: RUNTIME.contractAddress,
-            abi: OWNER_OF_ABI,
-            functionName: "ownerOf" as const,
-            args: [BigInt(tokenId)] as const,
-          }));
+          const chunkStart = Math.max(1, chunkEnd - OWNER_SCAN_CHUNK + 1);
+          const ids = Array.from(
+            { length: chunkEnd - chunkStart + 1 },
+            (_, index) => chunkEnd - index
+          );
 
-          const results = await publicClient.multicall({
-            allowFailure: true,
-            contracts,
-          });
+          for (
+            let offset = 0;
+            offset < ids.length && found.length < expectedBalance;
+            offset += DIRECT_READ_CONCURRENCY
+          ) {
+            if (cancelled) return;
 
-          results.forEach((result: any, index) => {
-            if (
-              result?.status === "success" &&
-              typeof result.result === "string" &&
-              result.result.toLowerCase() === target
-            ) {
-              found.push(ids[index]);
-            }
-          });
+            const batch = ids.slice(offset, offset + DIRECT_READ_CONCURRENCY);
+            const owners = await Promise.all(
+              batch.map((tokenId) => readOwnerWithRetry(publicClient, tokenId))
+            );
+
+            owners.forEach((owner, index) => {
+              if (
+                typeof owner === "string" &&
+                owner.toLowerCase() === target
+              ) {
+                found.push(batch[index]);
+              }
+            });
+          }
+        }
+
+        // balanceOf and ownerOf are both canonical ERC-721 reads. If they do not
+        // reconcile, fail closed instead of silently showing an incomplete list.
+        if (found.length !== expectedBalance) {
+          throw new Error(
+            `Ownership scan incomplete: expected ${expectedBalance}, found ${found.length}.`
+          );
         }
 
         if (!cancelled) {
-          setMyIds(found);
+          setMyIds(found.sort((a, b) => a - b));
           setLoadingMy(false);
         }
       } catch {
