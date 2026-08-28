@@ -69,6 +69,31 @@ export function RouteRouter() {
       }
     };
 
+    const openDocsSection = (sectionId: string, behavior: ScrollBehavior = "smooth") => {
+      const article = document.getElementById(sectionId);
+      if (!article || !sectionId.startsWith("docs-")) return false;
+
+      openRoutePage("docs", false);
+      history.replaceState(
+        null,
+        "",
+        location.pathname + location.search + "#/docs"
+      );
+
+      document
+        .querySelectorAll<HTMLAnchorElement>(".docs-index a[href^='#docs-']")
+        .forEach((link) => {
+          const isCurrent = link.getAttribute("href") === `#${sectionId}`;
+          if (isCurrent) link.setAttribute("aria-current", "true");
+          else link.removeAttribute("aria-current");
+        });
+
+      requestAnimationFrame(() => {
+        article.scrollIntoView({ behavior, block: "start" });
+      });
+      return true;
+    };
+
     const openCollectionMode = (mode: "all" | "mine") => {
       history.replaceState(
         null,
@@ -107,10 +132,22 @@ export function RouteRouter() {
     navLinks.forEach((link) => link.addEventListener("click", onNavClick));
 
     // Route pages and RitualOverlay can be replaced/mounted dynamically.
-    // Delegate close and post-mint actions so they always target live nodes.
+    // Delegate close, docs anchors and post-mint actions so they always target live nodes.
     const onDelegatedClick = (event: MouseEvent) => {
       const target = event.target as Element | null;
       if (!target) return;
+
+      const docsLink = target.closest<HTMLAnchorElement>(
+        ".docs-index a[href^='#docs-']"
+      );
+      if (docsLink) {
+        const href = docsLink.getAttribute("href");
+        if (href?.startsWith("#docs-")) {
+          event.preventDefault();
+          openDocsSection(href.slice(1));
+          return;
+        }
+      }
 
       if (target.closest("[data-close-page]")) {
         closeRoutePage(true);
@@ -137,13 +174,22 @@ export function RouteRouter() {
       gatePageVideo.src = sourceGateVideo.src;
     }
 
-    // Allow direct hashes.
-    if (location.hash === "#/collection") openRoutePage("collection", false);
-    if (location.hash === "#/gate") openRoutePage("gate", false);
-    if (location.hash === "#/docs") openRoutePage("docs", false);
+    // Allow direct hashes, including legacy direct docs anchors.
+    const initialHash = location.hash;
+    if (initialHash.startsWith("#docs-")) {
+      openDocsSection(initialHash.slice(1), "auto");
+    } else {
+      if (initialHash === "#/collection") openRoutePage("collection", false);
+      if (initialHash === "#/gate") openRoutePage("gate", false);
+      if (initialHash === "#/docs") openRoutePage("docs", false);
+    }
 
     const onHashChange = () => {
       const h = location.hash;
+      if (h.startsWith("#docs-")) {
+        openDocsSection(h.slice(1));
+        return;
+      }
       if (h === "#/collection" || h === "#/gate" || h === "#/docs") {
         openRoutePage(h.slice(2), false);
       } else {
