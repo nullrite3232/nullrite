@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - testnet-mainnet-readiness
-      - audit/phase-d-operator-helpers
 
 jobs:
   build:
