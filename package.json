@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "next lint",
     "contract:test": "node scripts/test-vessel.mjs",
-    "contract:deploy:testnet": "node scripts/deploy-vessel.mjs"
+    "contract:deploy:testnet": "node scripts/deploy-vessel.mjs",
+    "phase-d:deploy:testnet": "node scripts/deploy-phase-d-harness.mjs",
+    "phase-d:owner": "node scripts/phase-d-owner.mjs",
+    "phase-d:check": "node --check scripts/deploy-phase-d-harness.mjs && node --check scripts/phase-d-owner.mjs"
   },
   "dependencies": {
     "@tanstack/query-core": "5.101.4",
