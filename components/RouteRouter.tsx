@@ -7,22 +7,29 @@ const ROUTE_HASHES = ["#/collection", "#/gate", "#/docs"];
 
 /**
  * Lightweight front-end routing for distinct pages.
+ *
+ * Route page nodes can be replaced by React when protocol state changes
+ * (for example PRE_LAUNCH Collection -> live Collection). Resolve the current
+ * node at action time instead of holding a stale DOM reference from mount.
  */
 export function RouteRouter() {
   const { open } = useRitual();
 
   useEffect(() => {
-    const pages: Record<string, HTMLElement | null> = {
+    const getPages = (): Record<string, HTMLElement | null> => ({
       collection: document.getElementById("collectionPage"),
       gate: document.getElementById("gatePage"),
       docs: document.getElementById("docsPage"),
-    };
+    });
+
+    const getPage = (name: string) => getPages()[name] ?? null;
+
     const navLinks = Array.from(
       document.querySelectorAll<HTMLElement>(".main-nav a[data-nav]")
     );
 
     const closeRoutePage = (updateHash = true) => {
-      Object.values(pages).forEach((page) => {
+      Object.values(getPages()).forEach((page) => {
         page?.classList.remove("active");
         page?.setAttribute("aria-hidden", "true");
       });
@@ -40,7 +47,9 @@ export function RouteRouter() {
     };
 
     const openRoutePage = (name: string, updateHash = true) => {
+      const pages = getPages();
       if (!pages[name]) return;
+
       Object.entries(pages).forEach(([key, page]) => {
         const isActive = key === name;
         page?.classList.toggle("active", isActive);
@@ -89,24 +98,24 @@ export function RouteRouter() {
         open();
         return;
       }
-      if (pages[target ?? ""]) {
+      if (target && getPage(target)) {
         e.preventDefault();
-        openRoutePage(target!, true);
+        openRoutePage(target, true);
       }
     };
 
     navLinks.forEach((link) => link.addEventListener("click", onNavClick));
-    const closeButtons = Array.from(
-      document.querySelectorAll<HTMLElement>("[data-close-page]")
-    );
-    const onCloseClick = () => closeRoutePage(true);
-    closeButtons.forEach((btn) => btn.addEventListener("click", onCloseClick));
 
-    // RitualOverlay mounts dynamically. Delegate post-mint actions so the
-    // confirmed Vessel appears in the correct Collection tab after close.
+    // Route pages and RitualOverlay can be replaced/mounted dynamically.
+    // Delegate close and post-mint actions so they always target live nodes.
     const onDelegatedClick = (event: MouseEvent) => {
       const target = event.target as Element | null;
       if (!target) return;
+
+      if (target.closest("[data-close-page]")) {
+        closeRoutePage(true);
+        return;
+      }
 
       if (target.closest("#returnAssembly")) {
         setTimeout(() => openCollectionMode("all"), 0);
@@ -145,7 +154,6 @@ export function RouteRouter() {
 
     return () => {
       navLinks.forEach((link) => link.removeEventListener("click", onNavClick));
-      closeButtons.forEach((btn) => btn.removeEventListener("click", onCloseClick));
       document.removeEventListener("click", onDelegatedClick);
       window.removeEventListener("hashchange", onHashChange);
     };
