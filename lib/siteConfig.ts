@@ -1,9 +1,28 @@
 import { RH_TESTNET_CHAIN } from "@/lib/chain";
 import { RUNTIME } from "@/lib/runtime";
 
+const PUBLIC_SUPPLY = 3232;
+const rawRehearsalSupply = Number.parseInt(
+  process.env.NEXT_PUBLIC_NULLRITE_REHEARSAL_SUPPLY?.trim() ?? "",
+  10
+);
+const rehearsalSupply =
+  Number.isInteger(rawRehearsalSupply) &&
+  rawRehearsalSupply > 0 &&
+  rawRehearsalSupply <= PUBLIC_SUPPLY
+    ? rawRehearsalSupply
+    : null;
+
+// Rehearsal supply can only alter testnet UI math. Mainnet is hard-pinned to
+// the canonical 3232 Vessel supply regardless of environment input.
+const runtimeSupply =
+  RUNTIME.isTestnet && rehearsalSupply !== null
+    ? rehearsalSupply
+    : PUBLIC_SUPPLY;
+
 // NULL RITE — centralized site configuration.
-// Public production is currently a pre-launch presentation. Runtime chain/address
-// come from lib/runtime so testnet -> mainnet does not require component rewrites.
+// Runtime chain/address come from lib/runtime so testnet -> mainnet does not
+// require component rewrites.
 export const SITE = {
   name: "NULL RITE",
   domain: "nullrite.xyz",
@@ -11,7 +30,7 @@ export const SITE = {
   chainId: RUNTIME.chain.id,
   testnetChainId: RH_TESTNET_CHAIN.id,
   runtimeNetwork: RUNTIME.network,
-  supply: 3232,
+  supply: runtimeSupply,
   publicPhase: "PRE_LAUNCH",
   publicSummoningEnabled: false,
   maxMintPerWallet: 10,
