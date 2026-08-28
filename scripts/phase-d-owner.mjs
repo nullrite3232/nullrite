@@ -193,16 +193,21 @@ if (ACTION === "reveal") {
   args = [baseURI];
 }
 
-console.log(`\nExecuting owner action: ${ACTION}`);
+console.log(`\nSimulating owner action: ${ACTION}`);
 console.log(`Signer: ${account.address}`);
 
-const hash = await walletClient.writeContract({
+const { request } = await publicClient.simulateContract({
+  account,
   address: CONTRACT_ADDRESS,
   abi: harness.abi,
   functionName,
   args,
 });
 
+console.log("Simulation: PASS");
+console.log(`Broadcasting owner action: ${ACTION}`);
+
+const hash = await walletClient.writeContract(request);
 const receipt = await publicClient.waitForTransactionReceipt({ hash });
 if (receipt.status !== "success") {
   fail(`transaction failed: ${hash}`);
