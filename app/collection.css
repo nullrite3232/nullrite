@@ -168,7 +168,7 @@
 }
 .assembly-card-media{
   position:relative;
-  aspect-ratio:.86;
+  aspect-ratio:1/1;
   overflow:hidden;
   display:grid;
   place-items:center;
@@ -187,6 +187,7 @@
   width:100%;
   height:100%;
   object-fit:cover;
+  object-position:center;
   display:block;
   opacity:.84;
   filter:brightness(.72) contrast(1.07) saturate(.75);
@@ -313,7 +314,10 @@
 }
 .vessel-detail-media{
   position:relative;
-  min-height:520px;
+  min-height:0;
+  width:100%;
+  aspect-ratio:1/1;
+  align-self:start;
   display:grid;
   place-items:center;
   overflow:hidden;
@@ -332,6 +336,7 @@
   width:100%;
   height:100%;
   object-fit:cover;
+  object-position:center;
   display:block;
   opacity:.92;
   filter:brightness(.76) contrast(1.06) saturate(.78);
@@ -391,6 +396,9 @@
   align-items:center;
   border-bottom:1px solid var(--line);
 }
+.vessel-detail-row:nth-child(3){
+  display:none;
+}
 .vessel-detail-row span{
   color:#657075;
   font-size:7px;
@@ -432,6 +440,35 @@
   font-size:6px;
   line-height:1.65;
   letter-spacing:.13em;
+}
+
+/* Keep trait values readable without native scrollbar buttons covering content. */
+.vessel-detail-modal .vessel-detail-traits{
+  padding-right:10px;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(174,181,184,.55) transparent;
+}
+.vessel-detail-modal .vessel-detail-traits::-webkit-scrollbar{
+  width:6px;
+}
+.vessel-detail-modal .vessel-detail-traits::-webkit-scrollbar-track{
+  background:transparent;
+}
+.vessel-detail-modal .vessel-detail-traits::-webkit-scrollbar-thumb{
+  min-height:28px;
+  border-radius:999px;
+  background:rgba(174,181,184,.42);
+}
+.vessel-detail-modal .vessel-detail-traits::-webkit-scrollbar-button{
+  display:none;
+  width:0;
+  height:0;
+}
+.vessel-detail-modal .vessel-detail-trait{
+  padding-right:4px;
+}
+.vessel-detail-modal .vessel-detail-trait strong{
+  padding-left:12px;
 }
 
 @media(max-width:1100px){
