@@ -120,8 +120,12 @@ function parseMetadata(raw: unknown, metadataUrl: string): ParsedMetadata {
     : [];
 
   const topLevelRarity = scalarToString(raw.rarity);
+  const topLevelTier = scalarToString(raw.tier);
   const bornRarityAttribute = attributes.find(
     (attribute) => normalizeTraitName(attribute.traitType) === "born rarity"
+  );
+  const rarityTierAttribute = attributes.find(
+    (attribute) => normalizeTraitName(attribute.traitType) === "rarity tier"
   );
   const genericRarityAttribute = attributes.find(
     (attribute) => normalizeTraitName(attribute.traitType) === "rarity"
@@ -130,12 +134,18 @@ function parseMetadata(raw: unknown, metadataUrl: string): ParsedMetadata {
   const rarity =
     topLevelRarity ??
     bornRarityAttribute?.value ??
+    topLevelTier ??
+    rarityTierAttribute?.value ??
     genericRarityAttribute?.value ??
     null;
 
   const traits = attributes.filter((attribute) => {
     const normalized = normalizeTraitName(attribute.traitType);
-    return normalized !== "born rarity" && normalized !== "rarity";
+    return (
+      normalized !== "born rarity" &&
+      normalized !== "rarity tier" &&
+      normalized !== "rarity"
+    );
   });
 
   const image = scalarToString(raw.image);
