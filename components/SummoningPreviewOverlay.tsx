@@ -1,6 +1,6 @@
 "use client";
 
-import { ASSETS } from "@/lib/siteConfig";
+import { ASSETS, SITE } from "@/lib/siteConfig";
 
 export function SummoningPreviewOverlay({
   open,
@@ -41,7 +41,7 @@ export function SummoningPreviewOverlay({
               </p>
 
               <div className="ritual-data">
-                <div className="ritual-row"><span>Collection</span><span>3232 VESSELS</span></div>
+                <div className="ritual-row"><span>Collection</span><span>{SITE.supply} VESSELS</span></div>
                 <div className="ritual-row"><span>Summoning</span><span>SEALED</span></div>
                 <div className="ritual-row"><span>Currency</span><span>ETH</span></div>
                 <div className="ritual-row"><span>Reveal</span><span>SEALED</span></div>

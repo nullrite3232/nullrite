@@ -82,7 +82,7 @@ export default function Home() {
               </div>
               <div className="meta">
                 <div>
-                  <strong>3232</strong>
+                  <strong>{SITE.supply}</strong>
                   <span>Total Supply</span>
                 </div>
                 <div>
@@ -285,7 +285,7 @@ export default function Home() {
 
         <footer className="footer">
           <span>NULL RITE // {phase.minted === null ? SITE.supply : `${phase.minted} / ${SITE.supply}`} VESSELS</span>
-          <span>ROBINHOOD CHAIN // {publicPhaseLabel}</span>
+          <span>{SITE.chainName.toUpperCase()} // {publicPhaseLabel}</span>
         </footer>
       </div>
 
