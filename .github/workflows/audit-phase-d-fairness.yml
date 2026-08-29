@@ -1,0 +1,34 @@
+name: Audit Phase D Fairness Tooling
+
+on:
+  push:
+    branches:
+      - audit/phase-d-fairness-tooling
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install
+      - name: Fairness syntax
+        run: node --check scripts/phase-d-fairness-lib.mjs && node --check scripts/phase-d-fairness.mjs && node --check scripts/test-phase-d-fairness.mjs
+      - name: Fairness manifest + deterministic tests
+        run: npm run phase-d:fairness:test
+      - name: Fairness hash output
+        run: npm run phase-d:fairness:hash
+      - name: VesselNFT contract tests
+        run: npm run contract:test
+      - name: Phase D helper syntax
+        run: npm run phase-d:check
+      - name: Build
+        run: npm run build
