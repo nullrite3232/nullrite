@@ -5,7 +5,7 @@ import { useAccount, usePublicClient } from "wagmi";
 import { useWalletModal } from "@/components/WalletModal";
 import { useRitual } from "@/components/RitualContext";
 import { VesselDetailModal } from "@/components/VesselDetailModal";
-import { ASSETS, SITE } from "@/lib/siteConfig";
+import { ASSETS, IPFS, SITE } from "@/lib/siteConfig";
 import { RUNTIME } from "@/lib/runtime";
 import { useProtocolPhase } from "@/lib/useProtocolPhase";
 
@@ -24,11 +24,19 @@ const OWNERSHIP_ABI = [
     inputs: [{ name: "owner", type: "address" }],
     outputs: [{ name: "", type: "uint256" }],
   },
+  {
+    type: "function",
+    name: "tokenURI",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [{ name: "", type: "string" }],
+  },
 ] as const;
 
 const PAGE_SIZE = 24;
 const OWNER_SCAN_CHUNK = 64;
 const DIRECT_READ_CONCURRENCY = 8;
+const ARTWORK_READ_CONCURRENCY = 6;
 
 type CollectionMode = "all" | "mine";
 
@@ -39,6 +47,38 @@ function padTokenId(id: number) {
 function shortAddress(address?: string) {
   if (!address) return "";
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function resolveResourceUri(uri: string, baseUrl?: string) {
+  const trimmed = uri.trim();
+
+  if (trimmed.startsWith("ipfs://")) {
+    const path = trimmed.slice("ipfs://".length).replace(/^ipfs\//i, "");
+    const gateway = IPFS.gateway.replace(/\/$/, "");
+    return `${gateway}/${path}`;
+  }
+
+  if (trimmed.startsWith("ar://")) {
+    return `https://arweave.net/${trimmed.slice("ar://".length)}`;
+  }
+
+  if (/^(https?:|data:)/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (baseUrl) {
+    try {
+      return new URL(trimmed, baseUrl).toString();
+    } catch {
+      return trimmed;
+    }
+  }
+
+  return trimmed;
 }
 
 async function readOwnerWithRetry(publicClient: any, tokenId: number) {
@@ -61,6 +101,50 @@ async function readOwnerWithRetry(publicClient: any, tokenId: number) {
   }
 
   throw lastError ?? new Error(`ownerOf(${tokenId}) failed`);
+}
+
+async function readRevealedImage(publicClient: any, tokenId: number) {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const tokenUriResult = await publicClient.readContract({
+        address: RUNTIME.contractAddress,
+        abi: OWNERSHIP_ABI,
+        functionName: "tokenURI",
+        args: [BigInt(tokenId)],
+      });
+
+      if (typeof tokenUriResult !== "string" || tokenUriResult.trim().length === 0) {
+        throw new Error(`Invalid tokenURI(${tokenId}) response.`);
+      }
+
+      const metadataUrl = resolveResourceUri(tokenUriResult);
+      const response = await fetch(metadataUrl, { cache: "force-cache" });
+      if (!response.ok) {
+        throw new Error(`Metadata ${tokenId} returned ${response.status}.`);
+      }
+
+      const metadata: unknown = await response.json();
+      if (!isRecord(metadata) || typeof metadata.image !== "string") {
+        throw new Error(`Metadata ${tokenId} has no image URI.`);
+      }
+
+      const image = metadata.image.trim();
+      if (!image) {
+        throw new Error(`Metadata ${tokenId} has an empty image URI.`);
+      }
+
+      return resolveResourceUri(image, metadataUrl);
+    } catch (error) {
+      lastError = error;
+      if (attempt === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 220));
+      }
+    }
+  }
+
+  throw lastError ?? new Error(`Could not resolve artwork for Vessel #${tokenId}.`);
 }
 
 export function CollectionPage() {
@@ -86,6 +170,7 @@ export function CollectionPage() {
   const [myError, setMyError] = useState<string | null>(null);
   const [scanNonce, setScanNonce] = useState(0);
   const [selectedVesselId, setSelectedVesselId] = useState<number | null>(null);
+  const [cardImages, setCardImages] = useState<Record<number, string>>({});
 
   const mintedCount = Math.max(0, Math.min(minted ?? 0, SITE.supply));
 
@@ -228,8 +313,66 @@ export function CollectionPage() {
   }, [mode, isConnected, address, minted, mintedCount, publicClient, scanNonce]);
 
   const sourceIds = mode === "all" ? allIds : myIds;
-  const displayedIds = sourceIds.slice(0, visibleCount);
+  const displayedIds = useMemo(
+    () => sourceIds.slice(0, visibleCount),
+    [sourceIds, visibleCount]
+  );
   const hasMore = visibleCount < sourceIds.length;
+  const isRevealed = revealState === "REVEALED";
+
+  useEffect(() => {
+    if (!isRevealed) {
+      setCardImages({});
+      return;
+    }
+
+    if (!RUNTIME.contractConfigured || !publicClient || displayedIds.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadRevealedArtwork = async () => {
+      for (
+        let offset = 0;
+        offset < displayedIds.length;
+        offset += ARTWORK_READ_CONCURRENCY
+      ) {
+        if (cancelled) return;
+
+        const batch = displayedIds.slice(offset, offset + ARTWORK_READ_CONCURRENCY);
+        const results = await Promise.all(
+          batch.map(async (tokenId) => {
+            try {
+              const imageUrl = await readRevealedImage(publicClient, tokenId);
+              return [tokenId, imageUrl] as const;
+            } catch {
+              return null;
+            }
+          })
+        );
+
+        if (cancelled) return;
+
+        const resolved = results.filter(
+          (entry): entry is readonly [number, string] => entry !== null
+        );
+
+        if (resolved.length > 0) {
+          setCardImages((current) => ({
+            ...current,
+            ...Object.fromEntries(resolved),
+          }));
+        }
+      }
+    };
+
+    void loadRevealedArtwork();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [displayedIds, isRevealed, publicClient]);
 
   const statusText = isSoldOut
     ? "ASSEMBLY // COMPLETE"
@@ -270,7 +413,9 @@ export function CollectionPage() {
           <div className="assembly-empty">
             <div>
               <div className="eyebrow">
-                {publicMintActive ? "THE ASSEMBLY // AWAITING FIRST ANSWER" : "THE ASSEMBLY // SUMMONING PAUSED"}
+                {publicMintActive
+                  ? "THE ASSEMBLY // AWAITING FIRST ANSWER"
+                  : "THE ASSEMBLY // SUMMONING PAUSED"}
               </div>
               <h2>No Vessel has answered yet.</h2>
               <p>
@@ -378,7 +523,9 @@ export function CollectionPage() {
               {isSoldOut ? "THE ASSEMBLY IS COMPLETE." : "THE ASSEMBLY"}
             </h1>
             <div className="collection-live-count">
-              <strong>{minted === null ? "—" : mintedCount} / {SITE.supply}</strong>
+              <strong>
+                {minted === null ? "—" : mintedCount} / {SITE.supply}
+              </strong>
               <span>
                 {isSoldOut
                   ? "3232 VESSELS HAVE ANSWERED."
@@ -397,24 +544,39 @@ export function CollectionPage() {
           <div className="collection-meter">
             <div className="collection-meter-top">
               <span>Assembly Progress</span>
-              <strong>{minted === null ? "—" : `${mintedCount} / ${SITE.supply}`}</strong>
+              <strong>
+                {minted === null ? "—" : `${mintedCount} / ${SITE.supply}`}
+              </strong>
             </div>
             <div className="progress collection-progress">
               <i style={{ width: `${progress}%` }} />
             </div>
             <div className="collection-meter-meta">
-              <div><span>Summoning</span><strong>{summoningState}</strong></div>
-              <div><span>Reveal</span><strong>{revealState}</strong></div>
+              <div>
+                <span>Summoning</span>
+                <strong>{summoningState}</strong>
+              </div>
+              <div>
+                <span>Reveal</span>
+                <strong>{revealState}</strong>
+              </div>
             </div>
           </div>
         </div>
 
         {isSoldOut && (
-          <div className="actions" style={{ justifyContent: "center", marginBottom: 28 }}>
+          <div
+            className="actions"
+            style={{ justifyContent: "center", marginBottom: 28 }}
+          >
             <button className="btn primary" onClick={() => setMode("all")}>
               View the Assembly
             </button>
-            <button className="btn" type="button" disabled={revealState !== "REVEALED"}>
+            <button
+              className="btn"
+              type="button"
+              disabled={revealState !== "REVEALED"}
+            >
               {revealState === "REVEALED" ? "The Reveal Is Live" : "Await the Reveal"}
             </button>
           </div>
@@ -449,28 +611,42 @@ export function CollectionPage() {
         {displayedIds.length > 0 ? (
           <>
             <div className="assembly-grid">
-              {displayedIds.map((id) => (
-                <button
-                  className="assembly-card assembly-card-button"
-                  key={id}
-                  type="button"
-                  onClick={() => setSelectedVesselId(id)}
-                  aria-label={`View Vessel #${padTokenId(id)}`}
-                >
-                  <div className="assembly-card-media">
-                    <img src={ASSETS.sealedVessel} alt={`Sealed Vessel #${padTokenId(id)}`} />
-                  </div>
-                  <div className="assembly-card-info">
-                    <strong>VESSEL #{padTokenId(id)}</strong>
-                    <span>IDENTITY // SEALED</span>
-                  </div>
-                </button>
-              ))}
+              {displayedIds.map((id) => {
+                const imageSrc = isRevealed
+                  ? cardImages[id] ?? ASSETS.sealedVessel
+                  : ASSETS.sealedVessel;
+
+                return (
+                  <button
+                    className="assembly-card assembly-card-button"
+                    key={id}
+                    type="button"
+                    onClick={() => setSelectedVesselId(id)}
+                    aria-label={`View Vessel #${padTokenId(id)}`}
+                  >
+                    <div className="assembly-card-media">
+                      <img
+                        src={imageSrc}
+                        alt={`${isRevealed ? "Revealed" : "Sealed"} Vessel #${padTokenId(id)}`}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </div>
+                    <div className="assembly-card-info">
+                      <strong>VESSEL #{padTokenId(id)}</strong>
+                      <span>IDENTITY // {isRevealed ? "REVEALED" : "SEALED"}</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             {hasMore && (
               <div className="collection-load">
-                <button className="btn" onClick={() => setVisibleCount((value) => value + PAGE_SIZE)}>
+                <button
+                  className="btn"
+                  onClick={() => setVisibleCount((value) => value + PAGE_SIZE)}
+                >
                   Load More
                 </button>
               </div>
