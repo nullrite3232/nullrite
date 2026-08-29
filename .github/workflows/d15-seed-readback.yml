@@ -1,0 +1,28 @@
+name: D15 Seed Readback
+
+on:
+  push:
+    branches:
+      - audit/d15-seed-readback
+
+jobs:
+  d15:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install
+      - name: Fairness regression test
+        run: npm run phase-d:fairness:test
+      - name: D15 seed + deterministic assignment
+        env:
+          RH_TESTNET_RPC_URL: https://rpc.testnet.chain.robinhood.com
+          VESSEL_PROVENANCE_TX_HASH: 0xea25b51707b9eb192ff2d70c96c5664134f0289b1a9326e5a3661925f9778c6a
+        run: npm run phase-d:fairness:seed
