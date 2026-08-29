@@ -1,4 +1,4 @@
-name: D17 Preview IPFS Proxy Audit
+name: D17 Custom Lighthouse Gateway Audit
 
 on:
   push:
@@ -6,24 +6,24 @@ on:
       - audit/d15-seed-readback
 
 jobs:
-  d17-preview-proxy-audit:
+  d17-custom-gateway-audit:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
       contents: read
     steps:
-      - name: Verify preview metadata and artwork through Vercel IPFS proxy
+      - name: Verify metadata and artwork through custom Lighthouse gateway
         env:
-          PREVIEW: 'https://nullrite-git-phase-d-rehearsal-preview-vessel6.vercel.app'
+          GATEWAY: 'https://pleased-jellyfish-6s9j4.lighthouseweb3.xyz/ipfs'
           METADATA_CID: 'bafybeiaawsoktrjvewjv4emu7bxsoyctftxtkmglardz3cex335c25b3ci'
           IMAGE_CID: 'QmPax47qCinP2c6hj77F4CBvB74VHsas2j8Dqa3TdGphZq'
         run: |
           set -euo pipefail
-          echo "D17 PREVIEW IPFS PROXY AUDIT"
+          echo "D17 CUSTOM LIGHTHOUSE GATEWAY AUDIT"
           echo "READ_ONLY: YES"
 
-          META_URL="$PREVIEW/api/ipfs/$METADATA_CID/1.json"
-          IMAGE_URL="$PREVIEW/api/ipfs/$IMAGE_CID/Vessel_0007.png"
+          META_URL="$GATEWAY/$METADATA_CID/1.json"
+          IMAGE_URL="$GATEWAY/$IMAGE_CID/Vessel_0007.png"
 
           curl --fail --silent --show-error --location --retry 2 --retry-all-errors --max-time 35 \
             "$META_URL" -o /tmp/1.json
@@ -42,7 +42,7 @@ jobs:
           if (rarityTier !== 'Common') {
             throw new Error(`Unexpected Rarity Tier: ${rarityTier}`);
           }
-          console.log('METADATA_PROXY: PASS');
+          console.log('METADATA_GATEWAY: PASS');
           console.log('IMAGE_URI:', m.image);
           console.log('TIER:', m.tier);
           console.log('RARITY_TIER:', rarityTier);
@@ -52,5 +52,5 @@ jobs:
             --range 0-63 "$IMAGE_URL" -o /tmp/image.bin
 
           test -s /tmp/image.bin
-          echo "ARTWORK_PROXY: PASS"
+          echo "ARTWORK_GATEWAY: PASS"
           echo "FINAL_STATUS: FULL_PASS"
