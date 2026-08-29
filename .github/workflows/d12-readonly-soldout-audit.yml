@@ -1,0 +1,141 @@
+name: D12 Read-Only Sold-Out Audit
+
+on:
+  push:
+    branches:
+      - audit/d12-soldout-readback
+
+jobs:
+  d12:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: D12 live contract audit
+        env:
+          RH_TESTNET_RPC_URL: https://rpc.testnet.chain.robinhood.com
+          RH_CHAIN_ID: '46630'
+          PHASE_D_CONTRACT_ADDRESS: '0x0ab741e1c3377854678958404e749c2a1e71e0e2'
+        run: |
+          node --input-type=module <<'NODE'
+          import { createPublicClient, defineChain, formatEther, http } from 'viem';
+          import { artifact, compileContracts } from './scripts/contract-utils.mjs';
+
+          const EXPECTED_CHAIN_ID = 46630;
+          const CONTRACT = '0x0ab741e1c3377854678958404e749c2a1e71e0e2';
+          const EXPECTED_OWNER = '0xf590B355cc15Ab7BaE1A01bcFf1654bb0C0A3fAC';
+          const SEALED_URI = 'ipfs://QmUXPEmKkYLuAckUCQ7HqqdFGNpbcmHfoA9paHuaK6awAy';
+          const ZERO_HASH = `0x${'00'.repeat(32)}`;
+          const RPC = process.env.RH_TESTNET_RPC_URL;
+
+          function assert(condition, message) {
+            if (!condition) throw new Error(`D12 FAIL: ${message}`);
+          }
+
+          const chain = defineChain({
+            id: EXPECTED_CHAIN_ID,
+            name: 'Robinhood Testnet',
+            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: { default: { http: [RPC] } },
+          });
+
+          const client = createPublicClient({ chain, transport: http(RPC) });
+          const rpcChainId = await client.getChainId();
+          assert(rpcChainId === EXPECTED_CHAIN_ID, `RPC chain ${rpcChainId} != ${EXPECTED_CHAIN_ID}`);
+
+          const compiled = compileContracts({ includeHarness: true });
+          const harness = artifact(
+            compiled,
+            'contracts/test/VesselNFTTestHarness.sol',
+            'VesselNFTTestHarness'
+          );
+
+          const read = (functionName, args) => client.readContract({
+            address: CONTRACT,
+            abi: harness.abi,
+            functionName,
+            ...(args ? { args } : {}),
+          });
+
+          const [
+            owner,
+            totalSupply,
+            remainingSupply,
+            mintPrice,
+            maxPerTx,
+            maxPerWallet,
+            publicMintActive,
+            summoningStarted,
+            revealed,
+            provenanceHash,
+            sealedURI,
+            revealedBaseURI,
+          ] = await Promise.all([
+            read('owner'),
+            read('totalSupply'),
+            read('remainingSupply'),
+            read('mintPrice'),
+            read('maxPerTx'),
+            read('maxPerWallet'),
+            read('publicMintActive'),
+            read('summoningStarted'),
+            read('revealed'),
+            read('provenanceHash'),
+            read('sealedURI'),
+            read('revealedBaseURI'),
+          ]);
+
+          console.log('D12 // SOLD-OUT STATE');
+          console.log(`Chain ID: ${rpcChainId}`);
+          console.log(`Contract: ${CONTRACT}`);
+          console.log(`Owner: ${owner}`);
+          console.log(`Total supply: ${totalSupply}`);
+          console.log(`Remaining supply: ${remainingSupply}`);
+          console.log(`Mint price: ${formatEther(mintPrice)} ETH`);
+          console.log(`Max per tx: ${maxPerTx}`);
+          console.log(`Max per wallet: ${maxPerWallet}`);
+          console.log(`Public mint active: ${publicMintActive}`);
+          console.log(`Summoning started: ${summoningStarted}`);
+          console.log(`Revealed: ${revealed}`);
+          console.log(`Provenance: ${provenanceHash}`);
+          console.log(`Sealed URI: ${sealedURI}`);
+          console.log(`Revealed base URI: ${revealedBaseURI || '<empty>'}`);
+
+          assert(owner.toLowerCase() === EXPECTED_OWNER.toLowerCase(), 'owner mismatch');
+          assert(totalSupply === 10n, `totalSupply ${totalSupply} != 10`);
+          assert(remainingSupply === 0n, `remainingSupply ${remainingSupply} != 0`);
+          assert(mintPrice === 100000000000000n, `mintPrice ${mintPrice} != 0.0001 ETH`);
+          assert(maxPerTx === 10n, `maxPerTx ${maxPerTx} != 10`);
+          assert(maxPerWallet === 10n, `maxPerWallet ${maxPerWallet} != 10`);
+          assert(publicMintActive === false, 'publicMintActive must auto-close at sold out');
+          assert(summoningStarted === true, 'summoningStarted must remain true');
+          assert(revealed === false, 'revealed must remain false');
+          assert(provenanceHash.toLowerCase() === ZERO_HASH, 'provenance must still be zero');
+          assert(sealedURI === SEALED_URI, 'sealedURI mismatch');
+          assert(revealedBaseURI === '', 'revealedBaseURI must be empty');
+
+          console.log('\nD12 // TOKEN EXISTENCE + SEALED URI');
+          for (let tokenId = 1n; tokenId <= 10n; tokenId++) {
+            const [tokenOwner, tokenURI] = await Promise.all([
+              read('ownerOf', [tokenId]),
+              read('tokenURI', [tokenId]),
+            ]);
+            assert(tokenOwner !== '0x0000000000000000000000000000000000000000', `token ${tokenId} owner is zero`);
+            assert(tokenURI === SEALED_URI, `token ${tokenId} URI mismatch: ${tokenURI}`);
+            console.log(`#${tokenId}: owner=${tokenOwner} | tokenURI=${tokenURI}`);
+          }
+
+          console.log('\nD12 RESULT: PASS');
+          console.log('NO SIGNER USED');
+          console.log('NO ONCHAIN WRITE PERFORMED');
+          NODE
