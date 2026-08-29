@@ -1,6 +1,6 @@
 "use client";
 
-import { useReadContracts } from "wagmi";
+import { useReadContract } from "wagmi";
 import { RUNTIME } from "@/lib/runtime";
 import { SITE } from "@/lib/siteConfig";
 
@@ -45,52 +45,65 @@ export type PublicPhase =
   | "ASSEMBLY_COMPLETE"
   | "REVEALED";
 
+const protocolReadQuery = {
+  enabled: RUNTIME.contractConfigured,
+  refetchInterval: 8_000,
+  retry: 3,
+} as const;
+
 export function useProtocolPhase() {
-  const read = useReadContracts({
-    allowFailure: false,
-    contracts: [
-      {
-        address: RUNTIME.contractAddress,
-        abi: PROTOCOL_ABI,
-        functionName: "totalSupply",
-        chainId: RUNTIME.chain.id,
-      },
-      {
-        address: RUNTIME.contractAddress,
-        abi: PROTOCOL_ABI,
-        functionName: "publicMintActive",
-        chainId: RUNTIME.chain.id,
-      },
-      {
-        address: RUNTIME.contractAddress,
-        abi: PROTOCOL_ABI,
-        functionName: "summoningStarted",
-        chainId: RUNTIME.chain.id,
-      },
-      {
-        address: RUNTIME.contractAddress,
-        abi: PROTOCOL_ABI,
-        functionName: "revealed",
-        chainId: RUNTIME.chain.id,
-      },
-    ],
-    query: {
-      enabled: RUNTIME.contractConfigured,
-      refetchInterval: 8_000,
-    },
+  // Keep these as independent reads instead of one fail-all multicall. The
+  // public testnet RPC can intermittently reject a batched read; one transport
+  // failure must not make a revealed/sold-out preview look PRE_LAUNCH again.
+  const totalSupplyRead = useReadContract({
+    address: RUNTIME.contractAddress,
+    abi: PROTOCOL_ABI,
+    functionName: "totalSupply",
+    chainId: RUNTIME.chain.id,
+    query: protocolReadQuery,
   });
 
-  const results = read.data as
-    | readonly [bigint, boolean, boolean, boolean]
-    | undefined;
+  const publicMintActiveRead = useReadContract({
+    address: RUNTIME.contractAddress,
+    abi: PROTOCOL_ABI,
+    functionName: "publicMintActive",
+    chainId: RUNTIME.chain.id,
+    query: protocolReadQuery,
+  });
 
-  const contractStateSynced = Boolean(results) && !read.error;
+  const summoningStartedRead = useReadContract({
+    address: RUNTIME.contractAddress,
+    abi: PROTOCOL_ABI,
+    functionName: "summoningStarted",
+    chainId: RUNTIME.chain.id,
+    query: protocolReadQuery,
+  });
+
+  const revealedRead = useReadContract({
+    address: RUNTIME.contractAddress,
+    abi: PROTOCOL_ABI,
+    functionName: "revealed",
+    chainId: RUNTIME.chain.id,
+    query: protocolReadQuery,
+  });
+
+  const totalSupply = totalSupplyRead.data;
+  const publicMintActiveResult = publicMintActiveRead.data;
+  const summoningStartedResult = summoningStartedRead.data;
+  const revealedResult = revealedRead.data;
+
+  const contractStateSynced =
+    typeof totalSupply === "bigint" &&
+    typeof publicMintActiveResult === "boolean" &&
+    typeof summoningStartedResult === "boolean" &&
+    typeof revealedResult === "boolean";
+
   const minted = contractStateSynced
-    ? Math.max(0, Math.min(Number(results?.[0] ?? 0n), SITE.supply))
+    ? Math.max(0, Math.min(Number(totalSupply), SITE.supply))
     : null;
-  const publicMintActive = contractStateSynced ? Boolean(results?.[1]) : false;
-  const summoningStarted = contractStateSynced ? Boolean(results?.[2]) : false;
-  const revealed = contractStateSynced ? Boolean(results?.[3]) : false;
+  const publicMintActive = contractStateSynced ? publicMintActiveResult : false;
+  const summoningStarted = contractStateSynced ? summoningStartedResult : false;
+  const revealed = contractStateSynced ? revealedResult : false;
   const isSoldOut = contractStateSynced && minted !== null && minted >= SITE.supply;
   const remaining = minted === null ? null : Math.max(0, SITE.supply - minted);
   const progress = minted === null
@@ -123,6 +136,28 @@ export function useProtocolPhase() {
           ? "SUMMONING_PAUSED"
           : "PRE_LAUNCH";
 
+  const error =
+    totalSupplyRead.error ??
+    publicMintActiveRead.error ??
+    summoningStartedRead.error ??
+    revealedRead.error ??
+    null;
+
+  const isLoading =
+    totalSupplyRead.isLoading ||
+    publicMintActiveRead.isLoading ||
+    summoningStartedRead.isLoading ||
+    revealedRead.isLoading;
+
+  const refetch = async () => {
+    await Promise.all([
+      totalSupplyRead.refetch(),
+      publicMintActiveRead.refetch(),
+      summoningStartedRead.refetch(),
+      revealedRead.refetch(),
+    ]);
+  };
+
   return {
     minted,
     remaining,
@@ -136,8 +171,8 @@ export function useProtocolPhase() {
     revealState,
     publicPhase,
     contractStateSynced,
-    isLoading: read.isLoading,
-    error: read.error,
-    refetch: read.refetch,
+    isLoading,
+    error,
+    refetch,
   };
 }
