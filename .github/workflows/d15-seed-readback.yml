@@ -1,4 +1,4 @@
-name: D16 CID Metadata Audit v2
+name: D17 Preview IPFS Proxy Audit
 
 on:
   push:
@@ -6,112 +6,51 @@ on:
       - audit/d15-seed-readback
 
 jobs:
-  d16-cid-audit:
+  d17-preview-proxy-audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 8
     permissions:
       contents: read
     steps:
-      - name: Audit public IPFS CID via Lighthouse and subdomain gateways
+      - name: Verify preview metadata and artwork through Vercel IPFS proxy
         env:
-          CID: 'bafybeiaawsoktrjvewjv4emu7bxsoyctftxtkmglardz3cex335c25b3ci'
+          PREVIEW: 'https://nullrite-git-phase-d-rehearsal-preview-vessel6.vercel.app'
+          METADATA_CID: 'bafybeiaawsoktrjvewjv4emu7bxsoyctftxtkmglardz3cex335c25b3ci'
+          IMAGE_CID: 'QmPax47qCinP2c6hj77F4CBvB74VHsas2j8Dqa3TdGphZq'
         run: |
-          python - <<'PY'
-          import json, os, sys, urllib.request
+          set -euo pipefail
+          echo "D17 PREVIEW IPFS PROXY AUDIT"
+          echo "READ_ONLY: YES"
 
-          cid = os.environ['CID']
-          assignment = {1:7, 2:1, 3:9, 4:6, 5:3, 6:10, 7:2, 8:5, 9:4, 10:8}
+          META_URL="$PREVIEW/api/ipfs/$METADATA_CID/1.json"
+          IMAGE_URL="$PREVIEW/api/ipfs/$IMAGE_CID/Vessel_0007.png"
 
-          def candidate_urls(root_cid, path):
-              return [
-                  f'https://gateway.lighthouse.storage/ipfs/{root_cid}/{path}',
-                  f'https://{root_cid}.ipfs.w3s.link/{path}',
-                  f'https://{root_cid}.ipfs.dweb.link/{path}',
-                  f'https://{root_cid}.ipfs.cf-ipfs.com/{path}',
-              ]
+          curl --fail --silent --show-error --location --retry 2 --retry-all-errors --max-time 35 \
+            "$META_URL" -o /tmp/1.json
 
-          def get(url, limit=None, timeout=12):
-              headers = {'User-Agent':'NULL-RITE-D16-AUDIT/2.0'}
-              if limit:
-                  headers['Range'] = f'bytes=0-{limit-1}'
-              req = urllib.request.Request(url, headers=headers)
-              with urllib.request.urlopen(req, timeout=timeout) as r:
-                  data = r.read(limit or -1)
-                  return r.status, r.headers.get('Content-Type',''), data, r.geturl()
+          node - <<'NODE'
+          const fs = require('fs');
+          const m = JSON.parse(fs.readFileSync('/tmp/1.json', 'utf8'));
+          if (m.image !== 'ipfs://QmPax47qCinP2c6hj77F4CBvB74VHsas2j8Dqa3TdGphZq/Vessel_0007.png') {
+            throw new Error(`Unexpected image URI: ${m.image}`);
+          }
+          if (m.tier !== 'Common') {
+            throw new Error(`Unexpected tier: ${m.tier}`);
+          }
+          const attrs = Array.isArray(m.attributes) ? m.attributes : [];
+          const rarityTier = attrs.find((x) => x && x.trait_type === 'Rarity Tier')?.value;
+          if (rarityTier !== 'Common') {
+            throw new Error(`Unexpected Rarity Tier: ${rarityTier}`);
+          }
+          console.log('METADATA_PROXY: PASS');
+          console.log('IMAGE_URI:', m.image);
+          console.log('TIER:', m.tier);
+          console.log('RARITY_TIER:', rarityTier);
+          NODE
 
-          def fetch(root_cid, path, limit=None):
-              errs=[]
-              for url in candidate_urls(root_cid, path):
-                  try:
-                      status, ctype, data, final_url = get(url, limit=limit)
-                      if 200 <= status < 300 and data:
-                          return final_url, ctype, data
-                  except Exception as e:
-                      errs.append(f'{url} -> {type(e).__name__}: {e}')
-              raise RuntimeError(' | '.join(errs))
+          curl --fail --silent --show-error --location --retry 2 --retry-all-errors --max-time 35 \
+            --range 0-63 "$IMAGE_URL" -o /tmp/image.bin
 
-          def fetch_ipfs_uri(uri, limit=64):
-              if not isinstance(uri,str) or not uri.startswith('ipfs://'):
-                  raise RuntimeError(f'unsupported URI: {uri!r}')
-              x=uri[7:].lstrip('/')
-              root,path=(x.split('/',1)+[''])[:2] if '/' in x else (x,'')
-              return fetch(root,path,limit)
-
-          print('D16 CID AUDIT V2')
-          print('CID:',cid)
-          print('READ_ONLY: YES')
-
-          metadata_ok=False
-          metadata_error=None
-          try:
-              u,c,b=fetch(cid,'1.json')
-              m=json.loads(b.decode('utf-8'))
-              if not isinstance(m,dict): raise ValueError('top-level not object')
-              metadata_ok=True
-              print('CID_KIND: METADATA_DIRECTORY')
-              print('PROBE 1.json:',u,c)
-          except Exception as e:
-              metadata_error=e
-
-          if not metadata_ok:
-              print('METADATA_PROBE_FAILED:',str(metadata_error)[:1800])
-              try:
-                  u,c,b=fetch(cid,'Vessel_0001.png',64)
-                  print('CID_KIND: IMAGE_DIRECTORY')
-                  print('IMAGE_PROBE_PASS:',u,c,'bytes=',len(b))
-                  print('FINAL_STATUS: NOT_A_METADATA_BASE_URI')
-                  sys.exit(2)
-              except Exception as e:
-                  print('IMAGE_PROBE_FAILED:',str(e)[:1800])
-                  print('CID_KIND: UNKNOWN_OR_GATEWAY_UNREACHABLE')
-                  sys.exit(3)
-
-          seen=set()
-          for token_id in range(1,11):
-              source_id=assignment[token_id]
-              u,c,b=fetch(cid,f'{token_id}.json')
-              meta=json.loads(b.decode('utf-8'))
-              if not isinstance(meta,dict): raise RuntimeError(f'{token_id}.json root not object')
-              image=meta.get('image')
-              expected=f'Vessel_{source_id:04d}.png'
-              actual=image.rstrip('/').split('/')[-1] if isinstance(image,str) else None
-              if actual!=expected:
-                  raise RuntimeError(f'{token_id}.json mapping mismatch expected={expected} actual={actual!r}')
-              if image in seen: raise RuntimeError(f'duplicate image URI at {token_id}.json')
-              seen.add(image)
-              attrs=meta.get('attributes') if isinstance(meta.get('attributes'),list) else []
-              tier=meta.get('tier')
-              rarity_tier=next((a.get('value') for a in attrs if isinstance(a,dict) and str(a.get('trait_type','')).strip().lower().replace('_',' ')=='rarity tier'),None)
-              if not tier and not rarity_tier: raise RuntimeError(f'{token_id}.json missing tier/Rarity Tier')
-              body=next((a.get('value') for a in attrs if isinstance(a,dict) and str(a.get('trait_type','')).strip().lower()=='body'),None)
-              iu,ic,ib=fetch_ipfs_uri(image,64)
-              print(f'PASS {token_id}.json token={token_id} source={source_id} image={expected} tier={tier or rarity_tier} body={body} image_fetch={ic}')
-
-          if len(seen)!=10: raise RuntimeError('unique image count != 10')
-          print('D15_MAPPING: PASS')
-          print('JSON_1_TO_10: PASS')
-          print('RARITY_DATA: PASS')
-          print('IMAGE_URI_FETCH: PASS')
-          print('REVEAL_BASE_URI: ipfs://'+cid+'/')
-          print('FINAL_STATUS: FULL_PASS')
-          PY
+          test -s /tmp/image.bin
+          echo "ARTWORK_PROXY: PASS"
+          echo "FINAL_STATUS: FULL_PASS"
