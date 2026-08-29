@@ -70,7 +70,9 @@ export const SOCIALS = {
 } as const;
 
 export const IPFS = {
-  gateway: "https://gateway.lighthouse.storage/ipfs/",
+  // Route IPFS reads through our own multi-gateway fallback proxy so the
+  // viewer does not fail when one public gateway is unavailable or gated.
+  gateway: "/api/ipfs/",
   collectionCID: "QmXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
 } as const;
 
