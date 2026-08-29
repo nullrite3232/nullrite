@@ -121,8 +121,9 @@ export function buildAssignment(manifest, provenanceHash, seedBlockHash) {
   });
 
   ranked.sort((a, b) => {
-    const byScore = a.score.localeCompare(b.score);
-    return byScore !== 0 ? byScore : a.item.token_id - b.item.token_id;
+    if (a.score < b.score) return -1;
+    if (a.score > b.score) return 1;
+    return a.item.token_id - b.item.token_id;
   });
 
   return ranked.map(({ item, score }, index) => ({
