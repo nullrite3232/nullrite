@@ -21,5 +21,9 @@ jobs:
         run: npm run contract:test
       - name: Phase D helper syntax
         run: npm run phase-d:check
+      - name: Phase D fairness tests
+        run: npm run phase-d:fairness:test
+      - name: Phase D fairness hash
+        run: npm run phase-d:fairness:hash
       - name: Build
         run: npm run build

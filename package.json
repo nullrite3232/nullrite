@@ -11,7 +11,11 @@
     "contract:deploy:testnet": "node scripts/deploy-vessel.mjs",
     "phase-d:deploy:testnet": "node scripts/deploy-phase-d-harness.mjs",
     "phase-d:owner": "node scripts/phase-d-owner.mjs",
-    "phase-d:check": "node --check scripts/deploy-phase-d-harness.mjs && node --check scripts/phase-d-owner.mjs"
+    "phase-d:fairness:hash": "node scripts/phase-d-fairness.mjs hash",
+    "phase-d:fairness:assign": "node scripts/phase-d-fairness.mjs assign",
+    "phase-d:fairness:seed": "node scripts/phase-d-fairness.mjs seed",
+    "phase-d:fairness:test": "node scripts/test-phase-d-fairness.mjs",
+    "phase-d:check": "node --check scripts/deploy-phase-d-harness.mjs && node --check scripts/phase-d-owner.mjs && node --check scripts/phase-d-fairness-lib.mjs && node --check scripts/phase-d-fairness.mjs && node --check scripts/test-phase-d-fairness.mjs"
   },
   "dependencies": {
     "@tanstack/query-core": "5.101.4",

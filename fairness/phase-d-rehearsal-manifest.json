@@ -1,0 +1,82 @@
+{
+  "schema": "nullrite.phase-d.rehearsal-manifest.v1",
+  "project": "NULL RITE",
+  "network": "Robinhood Testnet",
+  "chain_id": 46630,
+  "contract": "0x0ab741e1c3377854678958404e749c2a1e71e0e2",
+  "collection_size": 10,
+  "image_root_cid": "QmPax47qCinP2c6hj77F4CBvB74VHsas2j8Dqa3TdGphZq",
+  "selection_rule": "Original production manifest entries token_id 1..10, frozen before provenance; token assignment occurs only after the future seed block.",
+  "items": [
+    {
+      "token_id": 1,
+      "filename": "Vessel_0001.png",
+      "rarity": "Legendary",
+      "source_rel": "Legendary/Vessel_0001.png",
+      "bytes": 1387190
+    },
+    {
+      "token_id": 2,
+      "filename": "Vessel_0002.png",
+      "rarity": "Uncommon",
+      "source_rel": "Uncommon/Vessel_0002.png",
+      "bytes": 1901261
+    },
+    {
+      "token_id": 3,
+      "filename": "Vessel_0003.png",
+      "rarity": "Legendary",
+      "source_rel": "Legendary/Vessel_0003.png",
+      "bytes": 1305962
+    },
+    {
+      "token_id": 4,
+      "filename": "Vessel_0004.png",
+      "rarity": "Uncommon",
+      "source_rel": "Uncommon/Vessel_0004.png",
+      "bytes": 1260728
+    },
+    {
+      "token_id": 5,
+      "filename": "Vessel_0005.png",
+      "rarity": "Common",
+      "source_rel": "Common/Vessel_0005.png",
+      "bytes": 1629683
+    },
+    {
+      "token_id": 6,
+      "filename": "Vessel_0006.png",
+      "rarity": "Legendary",
+      "source_rel": "Legendary/Vessel_0006.png",
+      "bytes": 1580251
+    },
+    {
+      "token_id": 7,
+      "filename": "Vessel_0007.png",
+      "rarity": "Common",
+      "source_rel": "Common/Vessel_0007.png",
+      "bytes": 1479112
+    },
+    {
+      "token_id": 8,
+      "filename": "Vessel_0008.png",
+      "rarity": "Legendary",
+      "source_rel": "Legendary/Vessel_0008.png",
+      "bytes": 1564803
+    },
+    {
+      "token_id": 9,
+      "filename": "Vessel_0009.png",
+      "rarity": "Uncommon",
+      "source_rel": "Uncommon/Vessel_0009.png",
+      "bytes": 1773176
+    },
+    {
+      "token_id": 10,
+      "filename": "Vessel_0010.png",
+      "rarity": "Common",
+      "source_rel": "Common/Vessel_0010.png",
+      "bytes": 1539995
+    }
+  ]
+}
