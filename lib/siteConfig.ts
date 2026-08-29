@@ -70,9 +70,10 @@ export const SOCIALS = {
 } as const;
 
 export const IPFS = {
-  // Route IPFS reads through our own multi-gateway fallback proxy so the
-  // viewer does not fail when one public gateway is unavailable or gated.
-  gateway: "/api/ipfs/",
+  // PHASE D REHEARSAL PREVIEW ONLY.
+  // Use the account's public Lighthouse custom gateway. The contract keeps
+  // canonical ipfs:// URIs; this URL is only the browser transport layer.
+  gateway: "https://pleased-jellyfish-6s9j4.lighthouseweb3.xyz/ipfs/",
   collectionCID: "QmXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
 } as const;
 
