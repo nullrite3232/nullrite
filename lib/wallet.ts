@@ -1,24 +1,19 @@
 import { createConfig } from "wagmi";
 import { createConnector, injected } from "@wagmi/core";
 import { defineChain, getAddress, http, numberToHex } from "viem";
-import { RH_CHAIN, RH_TESTNET_CHAIN } from "@/lib/chain";
+import { RH_CHAIN } from "@/lib/chain";
 import { RUNTIME } from "@/lib/runtime";
 
 const legacyProjectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID?.trim() ?? "";
-const testnetProjectId =
-  process.env.NEXT_PUBLIC_REOWN_PROJECT_ID_TESTNET?.trim() ?? "";
 const mainnetProjectId =
   process.env.NEXT_PUBLIC_REOWN_PROJECT_ID_MAINNET?.trim() ?? "";
-
-const runtimeProjectId =
-  RUNTIME.chain.id === RH_TESTNET_CHAIN.id ? testnetProjectId : mainnetProjectId;
-const rawProjectId = runtimeProjectId || legacyProjectId;
+const rawProjectId = mainnetProjectId || legacyProjectId;
 
 export const walletConnectConfigured = rawProjectId.length >= 24;
 export const walletProjectId = walletConnectConfigured ? rawProjectId : "";
 
-// Wagmi always exposes exactly the runtime chain. Testnet rehearsal and mainnet
-// therefore use the same wallet code path and differ only by environment config.
+// Mainnet prep exposes exactly Robinhood Chain mainnet. Testnet rehearsal stays
+// isolated on its preview branch and must not leak transport/runtime logic here.
 export const robinhoodChain = defineChain({
   id: RUNTIME.chain.id,
   name: RUNTIME.chain.name,
@@ -177,11 +172,8 @@ if (walletConnectConfigured) {
 export const wagmiConfig = createConfig({
   chains: [robinhoodChain],
   connectors,
-  // robinhoodChain is a runtime union at type-check time, so provide both
-  // transport keys. Only the selected runtime chain is exposed in chains[].
   transports: {
     [RH_CHAIN.id]: http(RH_CHAIN.rpcUrls.default.http[0]),
-    [RH_TESTNET_CHAIN.id]: http(RH_TESTNET_CHAIN.rpcUrls.default.http[0]),
   },
   multiInjectedProviderDiscovery: true,
   ssr: true,
