@@ -1,17 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useAppKit } from "@reown/appkit/react";
 import {
   useAccount,
-  useChainId,
   useSwitchChain,
   useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
 import { formatEther, parseEventLogs, zeroAddress } from "viem";
-import { RH_TESTNET_CHAIN } from "@/lib/chain";
+import { useWalletModal } from "@/components/WalletModal";
 import { ASSETS, SITE } from "@/lib/siteConfig";
+import { RUNTIME, transactionExplorerUrl } from "@/lib/runtime";
 import { useAssemblySupply } from "@/lib/useAssemblySupply";
 import {
   useMintContractState,
@@ -50,6 +49,13 @@ function friendlyTxError(message?: string) {
     return "Insufficient ETH for this summoning.";
   }
   if (
+    lower.includes("chain mismatch") ||
+    lower.includes("does not match the target chain") ||
+    lower.includes("network switch was not confirmed")
+  ) {
+    return `Switch the connected wallet to ${RUNTIME.chain.name} (chain ${RUNTIME.chain.id}) and try again.`;
+  }
+  if (
     lower.includes("mint inactive") ||
     lower.includes("mint is not active") ||
     lower.includes("public mint")
@@ -68,6 +74,51 @@ function friendlyTxError(message?: string) {
   return message.split("\n")[0] || "Transaction failed.";
 }
 
+function normalizeChainId(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "bigint") return Number(value);
+  if (typeof value === "string") {
+    const parsed = value.startsWith("0x")
+      ? Number.parseInt(value.slice(2), 16)
+      : Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+async function readWalletChain(connector: any): Promise<number | null> {
+  try {
+    const provider = await connector?.getProvider?.();
+    const rawChainId = await provider?.request?.({ method: "eth_chainId" });
+    const providerChainId = normalizeChainId(rawChainId);
+    if (providerChainId !== null) return providerChainId;
+  } catch {
+    // Fall through to connector state.
+  }
+
+  try {
+    return normalizeChainId(await connector?.getChainId?.());
+  } catch {
+    return null;
+  }
+}
+
+async function waitForWalletChain(connector: any, expectedChainId: number) {
+  const deadline = Date.now() + 5_000;
+  let lastSeen: number | null = null;
+
+  while (Date.now() < deadline) {
+    const liveChainId = await readWalletChain(connector);
+    if (liveChainId !== null) lastSeen = liveChainId;
+    if (liveChainId === expectedChainId) return;
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  }
+
+  throw new Error(
+    `Wallet network switch was not confirmed. Current chain: ${lastSeen ?? "unknown"}; required chain: ${expectedChainId}.`
+  );
+}
+
 export function RitualOverlay({
   open,
   onClose,
@@ -75,9 +126,13 @@ export function RitualOverlay({
   open: boolean;
   onClose: () => void;
 }) {
-  const { address, isConnected } = useAccount();
-  const chainId = useChainId();
-  const { open: openWallet } = useAppKit();
+  const {
+    address,
+    isConnected,
+    connector,
+    chainId: accountChainId,
+  } = useAccount();
+  const { openWalletModal } = useWalletModal();
   const { switchChainAsync } = useSwitchChain();
   const {
     writeContractAsync,
@@ -215,7 +270,22 @@ export function RitualOverlay({
     setTxError(null);
 
     if (!isConnected) {
-      await openWallet({ view: "Connect" });
+      openWalletModal();
+      return;
+    }
+
+    if (!RUNTIME.contractConfigured) {
+      setTxError("The Vessel contract is not configured for this environment.");
+      return;
+    }
+
+    if (isContractStateLoading) {
+      setTxError("Reading the live Summoning state from the contract.");
+      return;
+    }
+
+    if (!contractStateSynced) {
+      setTxError("The live Summoning state could not be verified. No transaction was sent.");
       return;
     }
 
@@ -246,18 +316,20 @@ export function RitualOverlay({
     }
 
     try {
-      if (chainId !== RH_TESTNET_CHAIN.id) {
-        await switchChainAsync({ chainId: RH_TESTNET_CHAIN.id });
+      const liveChainId = await readWalletChain(connector);
+      if (liveChainId !== RUNTIME.chain.id) {
+        await switchChainAsync({ chainId: RUNTIME.chain.id });
       }
+      await waitForWalletChain(connector, RUNTIME.chain.id);
 
       setStage("signature");
       await writeContractAsync({
-        address: SITE.contractAddress as `0x${string}`,
+        address: RUNTIME.contractAddress,
         abi: VESSEL_MINT_ABI,
         functionName: "mint",
         args: [BigInt(qty)],
         value: mintPriceWei * BigInt(qty),
-        chainId: RH_TESTNET_CHAIN.id,
+        chainId: RUNTIME.chain.id,
       });
     } catch (error: any) {
       setTxError(friendlyTxError(error?.shortMessage ?? error?.message));
@@ -280,31 +352,39 @@ export function RitualOverlay({
     ? "Their final forms remain sealed. The Reveal event will expose each born artwork, traits, and rarity later."
     : "Its final form remains sealed. The Reveal event will expose its born artwork, traits, and rarity later.";
 
-  const allowanceLabel = !isConnected
-    ? "CONNECT TO CHECK"
-    : isAllowanceLoading
-      ? "CHECKING"
-      : walletAllowance === null
-        ? "CONTRACT WILL VERIFY"
-        : walletAllowance === 0
-          ? "LIMIT REACHED"
-          : `${walletAllowance} REMAINING`;
-
-  const beginLabel = !publicMintActive
+  const allowanceLabel = !publicMintActive
     ? "SUMMONING SEALED"
-    : remaining === 0
-      ? "ASSEMBLY COMPLETE"
-      : walletAllowance === 0
-        ? "WALLET LIMIT REACHED"
-        : isContractStateLoading
-          ? "SYNCING CONTRACT"
-          : isAllowanceLoading
-            ? "CHECKING WALLET"
-            : isPending
-              ? "AWAITING SIGNATURE"
-              : `SUMMON ${qty} ${plural ? "VESSELS" : "VESSEL"}`;
+    : !isConnected
+      ? "CONNECT TO CHECK"
+      : isAllowanceLoading
+        ? "CHECKING"
+        : walletAllowance === null
+          ? "CONTRACT WILL VERIFY"
+          : walletAllowance === 0
+            ? "LIMIT REACHED"
+            : `${walletAllowance} REMAINING`;
+
+  const beginLabel = !RUNTIME.contractConfigured
+    ? "CONTRACT NOT CONFIGURED"
+    : isContractStateLoading
+      ? "SYNCING CONTRACT"
+      : !contractStateSynced
+        ? "CONTRACT UNAVAILABLE"
+        : !publicMintActive
+          ? "SUMMONING SEALED"
+          : remaining === 0
+            ? "ASSEMBLY COMPLETE"
+            : walletAllowance === 0
+              ? "WALLET LIMIT REACHED"
+              : isAllowanceLoading
+                ? "CHECKING WALLET"
+                : isPending
+                  ? "AWAITING SIGNATURE"
+                  : `SUMMON ${qty} ${plural ? "VESSELS" : "VESSEL"}`;
 
   const beginDisabled =
+    !RUNTIME.contractConfigured ||
+    !contractStateSynced ||
     isPending ||
     isConfirming ||
     isContractStateLoading ||
@@ -312,6 +392,14 @@ export function RitualOverlay({
     remaining === 0 ||
     !publicMintActive ||
     walletAllowance === 0;
+
+  const walletNetworkLabel = !isConnected
+    ? "NOT CONNECTED"
+    : accountChainId === RUNTIME.chain.id
+      ? "READY"
+      : accountChainId
+        ? `SWITCH REQUIRED // CHAIN ${accountChainId}`
+        : "CHECK ON SUMMON";
 
   return (
     <div className="ritual-overlay show" id="ritualOverlay">
@@ -354,10 +442,11 @@ export function RitualOverlay({
 
               <div className="ritual-data">
                 <div className="ritual-row"><span>Summoning Cost</span><span id="sumCost">{cost} ETH</span></div>
-                <div className="ritual-row"><span>Network</span><span>Robinhood Chain</span></div>
+                <div className="ritual-row"><span>Network</span><span>{RUNTIME.chain.name}</span></div>
+                <div className="ritual-row"><span>Wallet Network</span><span>{walletNetworkLabel}</span></div>
                 <div className="ritual-row"><span>Summoning State</span><span>{publicMintActive ? "OPEN" : "SEALED"}</span></div>
                 <div className="ritual-row"><span>Wallet Allowance</span><span>{allowanceLabel}</span></div>
-                <div className="ritual-row"><span>Contract Rules</span><span>{contractStateSynced ? "ONCHAIN // LIVE" : isContractStateLoading ? "SYNCING" : "CONTRACT VERIFY"}</span></div>
+                <div className="ritual-row"><span>Contract Rules</span><span>{contractStateSynced ? "ONCHAIN // LIVE" : isContractStateLoading ? "SYNCING" : "UNAVAILABLE"}</span></div>
                 <div className="ritual-row"><span>Reveal State</span><span>SEALED</span></div>
                 <div className="ritual-row">
                   <span>Vessels Summoned</span>
@@ -396,13 +485,13 @@ export function RitualOverlay({
               <div className="await-art"><img src={ASSETS.riteCore} alt="Rite Core" /></div>
               <div className="eyebrow">AWAITING THE CHAIN</div>
               <h2 className="await-head">A Vessel is answering.</h2>
-              <p className="await-copy">The transaction has been submitted to Robinhood Chain. The page will advance automatically after confirmation.</p>
+              <p className="await-copy">The transaction has been submitted to {RUNTIME.chain.name}. The page will advance automatically after confirmation.</p>
               <div className="await-status">
                 <div><span className="done">SIGNATURE ACCEPTED</span><span className="done">DONE</span></div>
                 <div><span className="done">TRANSACTION SUBMITTED</span><span className="done">DONE</span></div>
                 <div><span className={isConfirmed ? "done" : "live"}>CONFIRMATION</span><span className={isConfirmed ? "done" : "live"}>{isConfirmed ? "DONE" : isConfirming ? "CONFIRMING" : "PENDING"}</span></div>
               </div>
-              {hash && <a className="btn" href={`https://explorer.testnet.chain.robinhood.com/tx/${hash}`} target="_blank" rel="noreferrer">View Transaction</a>}
+              {hash && <a className="btn" href={transactionExplorerUrl(hash)} target="_blank" rel="noreferrer">View Transaction</a>}
             </div>
           </section>
 
@@ -420,7 +509,7 @@ export function RitualOverlay({
                 </div>
                 <div className="ritual-row"><span>Assembly</span><span>{minted === null ? "—" : minted} / {SITE.supply}</span></div>
                 <div className="ritual-row"><span>Reveal State</span><span>SEALED</span></div>
-                <div className="ritual-row"><span>Network</span><span>Robinhood Chain</span></div>
+                <div className="ritual-row"><span>Network</span><span>{RUNTIME.chain.name}</span></div>
                 <div className="ritual-row"><span>Gate State</span><span>SEALED</span></div>
               </div>
               <div className="success-actions">

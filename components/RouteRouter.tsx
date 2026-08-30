@@ -7,22 +7,29 @@ const ROUTE_HASHES = ["#/collection", "#/gate", "#/docs"];
 
 /**
  * Lightweight front-end routing for distinct pages.
+ *
+ * Route page nodes can be replaced by React when protocol state changes
+ * (for example PRE_LAUNCH Collection -> live Collection). Resolve the current
+ * node at action time instead of holding a stale DOM reference from mount.
  */
 export function RouteRouter() {
   const { open } = useRitual();
 
   useEffect(() => {
-    const pages: Record<string, HTMLElement | null> = {
+    const getPages = (): Record<string, HTMLElement | null> => ({
       collection: document.getElementById("collectionPage"),
       gate: document.getElementById("gatePage"),
       docs: document.getElementById("docsPage"),
-    };
+    });
+
+    const getPage = (name: string) => getPages()[name] ?? null;
+
     const navLinks = Array.from(
       document.querySelectorAll<HTMLElement>(".main-nav a[data-nav]")
     );
 
     const closeRoutePage = (updateHash = true) => {
-      Object.values(pages).forEach((page) => {
+      Object.values(getPages()).forEach((page) => {
         page?.classList.remove("active");
         page?.setAttribute("aria-hidden", "true");
       });
@@ -40,7 +47,9 @@ export function RouteRouter() {
     };
 
     const openRoutePage = (name: string, updateHash = true) => {
+      const pages = getPages();
       if (!pages[name]) return;
+
       Object.entries(pages).forEach(([key, page]) => {
         const isActive = key === name;
         page?.classList.toggle("active", isActive);
@@ -60,6 +69,43 @@ export function RouteRouter() {
       }
     };
 
+    const openDocsSection = (sectionId: string, behavior: ScrollBehavior = "smooth") => {
+      const article = document.getElementById(sectionId);
+      if (!article || !sectionId.startsWith("docs-")) return false;
+
+      openRoutePage("docs", false);
+      history.replaceState(
+        null,
+        "",
+        location.pathname + location.search + "#/docs"
+      );
+
+      document
+        .querySelectorAll<HTMLAnchorElement>(".docs-index a[href^='#docs-']")
+        .forEach((link) => {
+          const isCurrent = link.getAttribute("href") === `#${sectionId}`;
+          if (isCurrent) link.setAttribute("aria-current", "true");
+          else link.removeAttribute("aria-current");
+        });
+
+      requestAnimationFrame(() => {
+        article.scrollIntoView({ behavior, block: "start" });
+      });
+      return true;
+    };
+
+    const openCollectionMode = (mode: "all" | "mine") => {
+      history.replaceState(
+        null,
+        "",
+        location.pathname + location.search + "#/collection"
+      );
+      openRoutePage("collection", false);
+      window.dispatchEvent(
+        new CustomEvent("nullrite:collection-mode", { detail: mode })
+      );
+    };
+
     const onNavClick = (e: Event) => {
       const link = e.currentTarget as HTMLElement;
       const target = link.dataset.nav;
@@ -77,18 +123,45 @@ export function RouteRouter() {
         open();
         return;
       }
-      if (pages[target ?? ""]) {
+      if (target && getPage(target)) {
         e.preventDefault();
-        openRoutePage(target!, true);
+        openRoutePage(target, true);
       }
     };
 
     navLinks.forEach((link) => link.addEventListener("click", onNavClick));
-    const closeButtons = Array.from(
-      document.querySelectorAll<HTMLElement>("[data-close-page]")
-    );
-    const onCloseClick = () => closeRoutePage(true);
-    closeButtons.forEach((btn) => btn.addEventListener("click", onCloseClick));
+
+    // Route pages and RitualOverlay can be replaced/mounted dynamically.
+    // Delegate close, docs anchors and post-mint actions so they always target live nodes.
+    const onDelegatedClick = (event: MouseEvent) => {
+      const target = event.target as Element | null;
+      if (!target) return;
+
+      const docsLink = target.closest<HTMLAnchorElement>(
+        ".docs-index a[href^='#docs-']"
+      );
+      if (docsLink) {
+        const href = docsLink.getAttribute("href");
+        if (href?.startsWith("#docs-")) {
+          event.preventDefault();
+          openDocsSection(href.slice(1));
+          return;
+        }
+      }
+
+      if (target.closest("[data-close-page]")) {
+        closeRoutePage(true);
+        return;
+      }
+
+      if (target.closest("#returnAssembly")) {
+        setTimeout(() => openCollectionMode("all"), 0);
+      }
+      if (target.closest("#viewVesselBtn")) {
+        setTimeout(() => openCollectionMode("mine"), 0);
+      }
+    };
+    document.addEventListener("click", onDelegatedClick);
 
     // Reuse the current Gate video inside the dedicated sealed Gate page.
     const sourceGateVideo = document.querySelector<HTMLVideoElement>(
@@ -101,13 +174,22 @@ export function RouteRouter() {
       gatePageVideo.src = sourceGateVideo.src;
     }
 
-    // Allow direct hashes.
-    if (location.hash === "#/collection") openRoutePage("collection", false);
-    if (location.hash === "#/gate") openRoutePage("gate", false);
-    if (location.hash === "#/docs") openRoutePage("docs", false);
+    // Allow direct hashes, including legacy direct docs anchors.
+    const initialHash = location.hash;
+    if (initialHash.startsWith("#docs-")) {
+      openDocsSection(initialHash.slice(1), "auto");
+    } else {
+      if (initialHash === "#/collection") openRoutePage("collection", false);
+      if (initialHash === "#/gate") openRoutePage("gate", false);
+      if (initialHash === "#/docs") openRoutePage("docs", false);
+    }
 
     const onHashChange = () => {
       const h = location.hash;
+      if (h.startsWith("#docs-")) {
+        openDocsSection(h.slice(1));
+        return;
+      }
       if (h === "#/collection" || h === "#/gate" || h === "#/docs") {
         openRoutePage(h.slice(2), false);
       } else {
@@ -118,7 +200,7 @@ export function RouteRouter() {
 
     return () => {
       navLinks.forEach((link) => link.removeEventListener("click", onNavClick));
-      closeButtons.forEach((btn) => btn.removeEventListener("click", onCloseClick));
+      document.removeEventListener("click", onDelegatedClick);
       window.removeEventListener("hashchange", onHashChange);
     };
   }, [open]);

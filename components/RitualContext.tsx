@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from "react";
 import { RitualOverlay } from "@/components/RitualOverlay";
 import { SummoningPreviewOverlay } from "@/components/SummoningPreviewOverlay";
-import { SITE } from "@/lib/siteConfig";
+import { useProtocolPhase } from "@/lib/useProtocolPhase";
 
 type RitualCtxValue = { open: () => void };
 
@@ -15,14 +15,35 @@ export function useRitual() {
 
 export function RitualProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
-  const open = useCallback(() => setIsOpen(true), []);
+  const phase = useProtocolPhase();
+
+  const openAssembly = useCallback(() => {
+    if (typeof window === "undefined") return;
+    history.replaceState(null, "", location.pathname + location.search + "#/collection");
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+    setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent("nullrite:collection-mode", { detail: "all" })
+      );
+    }, 0);
+  }, []);
+
+  const open = useCallback(() => {
+    if (phase.isSoldOut || phase.revealed) {
+      openAssembly();
+      return;
+    }
+    setIsOpen(true);
+  }, [openAssembly, phase.isSoldOut, phase.revealed]);
+
   const value = useMemo(() => ({ open }), [open]);
   const close = () => setIsOpen(false);
+  const useLiveSummoning = phase.summoningStarted || phase.publicMintActive;
 
   return (
     <RitualCtx.Provider value={value}>
       {children}
-      {SITE.publicSummoningEnabled ? (
+      {useLiveSummoning ? (
         <RitualOverlay open={isOpen} onClose={close} />
       ) : (
         <SummoningPreviewOverlay open={isOpen} onClose={close} />

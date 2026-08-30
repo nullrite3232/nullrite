@@ -1,14 +1,19 @@
-// NULL RITE — centralized site configuration.
-// Public production is currently a pre-launch presentation. Development plumbing
-// may use a non-production contract, but public copy must not present it as a live mint.
+import { RH_TESTNET_CHAIN } from "@/lib/chain";
+import { RUNTIME } from "@/lib/runtime";
 
+const PUBLIC_SUPPLY = 3232;
+
+// NULL RITE — centralized production site configuration.
+// Mainnet runtime is fixed to Robinhood Chain; the contract address is supplied
+// only after the audited mainnet deployment is complete.
 export const SITE = {
   name: "NULL RITE",
   domain: "nullrite.xyz",
-  chainName: "Robinhood Chain",
-  chainId: 4663,
-  testnetChainId: 46630,
-  supply: 3232,
+  chainName: RUNTIME.chain.name,
+  chainId: RUNTIME.chain.id,
+  testnetChainId: RH_TESTNET_CHAIN.id,
+  runtimeNetwork: RUNTIME.network,
+  supply: PUBLIC_SUPPLY,
   publicPhase: "PRE_LAUNCH",
   publicSummoningEnabled: false,
   maxMintPerWallet: 10,
@@ -16,7 +21,8 @@ export const SITE = {
   mintCurrency: "ETH",
   mintPriceEth: 0.0001,
   mintPriceLocked: false,
-  contractAddress: "0xd3E85fe5D282e1bc49F4A6B189272Ec874D29500",
+  contractAddress: RUNTIME.contractAddress,
+  contractConfigured: RUNTIME.contractConfigured,
 } as const;
 
 export const STATE = {
@@ -47,11 +53,14 @@ export const SOCIALS = {
   x: "https://x.com/nullrite3232",
   discord: "https://discord.gg/nullrite",
   docs: "https://docs.nullrite.xyz",
-  contract: "https://testnet.blockscout.robinhood.com/address/0xd3E85fe5D282e1bc49F4A6B189272Ec874D29500",
+  contract: RUNTIME.contractConfigured
+    ? `${RUNTIME.chain.blockExplorers.default.url}/address/${RUNTIME.contractAddress}`
+    : "",
 } as const;
 
 export const IPFS = {
-  gateway: "https://gateway.lighthouse.storage/ipfs/",
+  // Browser transport only. Canonical NFT metadata remains ipfs:// onchain.
+  gateway: "https://pleased-jellyfish-6s9j4.lighthouseweb3.xyz/ipfs/",
   collectionCID: "QmXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
 } as const;
 

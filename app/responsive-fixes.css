@@ -525,3 +525,11 @@
     grid-template-columns:44px minmax(0,1fr) 44px;
   }
 }
+
+/* Phase D rehearsal: reduce only the desktop Summoning overlay footprint. */
+@media(min-width:981px){
+  .ritual-panel{
+    transform:scale(.90);
+    transform-origin:center;
+  }
+}
