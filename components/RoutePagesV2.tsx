@@ -369,10 +369,10 @@ export function RoutePagesV2() {
                 <h2>WHAT HAPPENS NEXT?</h2>
                 <p>NULL RITE unfolds as a sequence of states rather than a mint that ends at Reveal.</p>
                 <div className="docs-spec">
-                  <div className="ritual-row"><span>01 // $RITE</span><span>THE FUEL AWAKENS</span></div>
-                  <div className="ritual-row"><span>02 // SUMMONING</span><span>3232 VESSELS ANSWER</span></div>
-                  <div className="ritual-row"><span>03 // ASSEMBLY</span><span>IDENTITIES FORM ONCHAIN</span></div>
-                  <div className="ritual-row"><span>04 // REVEAL</span><span>BORN FORMS SURFACE</span></div>
+                  <div className="ritual-row"><span>01 // SUMMONING</span><span>3232 VESSELS ANSWER</span></div>
+                  <div className="ritual-row"><span>02 // ASSEMBLY</span><span>IDENTITIES FORM ONCHAIN</span></div>
+                  <div className="ritual-row"><span>03 // REVEAL</span><span>BORN FORMS SURFACE</span></div>
+                  <div className="ritual-row"><span>04 // $RITE</span><span>THE MEANS TO ACT AWAKENS</span></div>
                   <div className="ritual-row"><span>05 // RESONANCE</span><span>THE GATE RESPONDS</span></div>
                   <div className="ritual-row"><span>06 // GATE</span><span>CHOICES BEGIN</span></div>
                   <div className="ritual-row"><span>07 // OFFERING</span><span>$RITE BURNS WHEN REQUIRED</span></div>
