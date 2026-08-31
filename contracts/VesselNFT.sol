@@ -2,15 +2,17 @@
 pragma solidity ^0.8.24;
 
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {ERC2981} from "@openzeppelin/contracts/token/common/ERC2981.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-contract VesselNFT is ERC721, Ownable2Step, ReentrancyGuard {
+contract VesselNFT is ERC721, ERC2981, Ownable2Step, ReentrancyGuard {
     using Strings for uint256;
 
     uint256 public constant MAX_SUPPLY = 3232;
+    uint96 public constant ROYALTY_FEE_NUMERATOR = 500; // 5% with ERC-2981's 10,000 denominator.
 
     uint256 public mintPrice;
     uint256 public maxPerTx;
@@ -64,6 +66,7 @@ contract VesselNFT is ERC721, Ownable2Step, ReentrancyGuard {
         maxPerTx = initialMaxPerTx;
         maxPerWallet = initialMaxPerWallet;
         sealedURI = initialSealedURI;
+        _setDefaultRoyalty(initialOwner, ROYALTY_FEE_NUMERATOR);
     }
 
     function totalSupply() public view returns (uint256) {
@@ -158,6 +161,12 @@ contract VesselNFT is ERC721, Ownable2Step, ReentrancyGuard {
         _requireOwned(tokenId);
         if (!revealed) return sealedURI;
         return string.concat(revealedBaseURI, tokenId.toString(), ".json");
+    }
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view override(ERC721, ERC2981) returns (bool) {
+        return super.supportsInterface(interfaceId);
     }
 
     function withdraw(address payable recipient) external onlyOwner nonReentrant {
