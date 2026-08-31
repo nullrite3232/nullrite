@@ -10,7 +10,7 @@ const DOC_NAV = [
   ["docs-summoning", "Summoning"],
   ["docs-assembly", "Assembly"],
   ["docs-reveal", "Reveal"],
-  ["docs-fair-reveal", "Fair Reveal"],
+  ["docs-fair-reveal", "Reveal Integrity"],
   ["docs-gate", "The Gate"],
   ["docs-inside-gate", "Inside the Gate"],
   ["docs-offering", "The Offering"],
@@ -197,31 +197,32 @@ export function RoutePagesV2() {
                 </p>
                 <p>
                   Token IDs remain sequential. Final artwork, traits and rarity are
-                  randomized through the Reveal process, so mint order does not
-                  determine a Vessel&apos;s born form.
+                  assigned from a privately randomized mapping that is frozen before
+                  Reveal, so mint order does not determine a Vessel&apos;s born form.
                 </p>
                 <div className="docs-proof"><strong>THE TOKEN DOES NOT CHANGE.</strong><p>What was hidden becomes known.</p></div>
               </article>
 
               <article id="docs-fair-reveal">
-                <div className="docs-status"><i></i>Verifiable Assignment</div>
-                <h2>FAIR REVEAL</h2>
+                <div className="docs-status"><i></i>Reveal Integrity</div>
+                <h2>REVEAL INTEGRITY</h2>
                 <p>
-                  Before the Reveal seed is known, the complete 3232-item reveal
-                  set will be frozen and committed through a published provenance
-                  hash. The seed source will be declared before its value is knowable.
+                  The complete 3232-item final metadata mapping has been privately
+                  randomized, frozen and audited before Reveal. The mapping is not
+                  generated onchain and does not rely on a future block or public seed.
                 </p>
                 <p>
-                  Final token-ID-to-metadata assignment will be deterministic from
-                  the public commitment and seed. The commitment, seed reference and
-                  assignment method will be published for independent verification.
+                  After the Assembly is complete, a provenance hash is committed
+                  onchain before the final metadata base URI is revealed. The
+                  commitment and Reveal transaction provide a public record of the
+                  finalized reveal package.
                 </p>
-                <div className="docs-proof"><strong>THE ORDER CANNOT REARRANGE WHAT HAS ALREADY BEEN COMMITTED.</strong><p>Provenance fixes the set first. The later seed determines the assignment.</p></div>
+                <div className="docs-proof"><strong>THE ASSIGNMENT IS FROZEN BEFORE REVEAL.</strong><p>Provenance anchors the finalized package; it is not a claim of onchain randomness.</p></div>
                 <div className="docs-spec">
                   <div className="ritual-row"><span>Token IDs</span><span>SEQUENTIAL</span></div>
-                  <div className="ritual-row"><span>Final Assignment</span><span>RANDOMIZED</span></div>
-                  <div className="ritual-row"><span>Provenance</span><span>BEFORE SEED</span></div>
-                  <div className="ritual-row"><span>Verification</span><span>PUBLIC</span></div>
+                  <div className="ritual-row"><span>Final Assignment</span><span>PRIVATELY RANDOMIZED</span></div>
+                  <div className="ritual-row"><span>Mapping</span><span>FROZEN BEFORE REVEAL</span></div>
+                  <div className="ritual-row"><span>Onchain Record</span><span>PROVENANCE + REVEAL URI</span></div>
                 </div>
               </article>
 
@@ -402,7 +403,7 @@ export function RoutePagesV2() {
                   <div className="ritual-row"><span>Collection</span><span>3232 VESSELS</span></div>
                   <div className="ritual-row"><span>Mint Currency</span><span>ETH</span></div>
                   <div className="ritual-row"><span>Vessel Contract</span><span>PUBLISHED WITH SUMMONING</span></div>
-                  <div className="ritual-row"><span>Reveal</span><span>PROVENANCE + PUBLIC SEED</span></div>
+                  <div className="ritual-row"><span>Reveal</span><span>PROVENANCE + FINAL URI</span></div>
                   <div className="ritual-row"><span>Offerings</span><span>VERIFIABLE BURNS</span></div>
                   <div className="ritual-row"><span>Main Gate Pools</span><span>DISCLOSED BEFORE ENTRY</span></div>
                 </div>
