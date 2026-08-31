@@ -90,10 +90,15 @@ async function expectRevert(label, request) {
 }
 
 assert.equal(await read("MAX_SUPPLY"), 3232n);
+assert.equal(await read("ROYALTY_FEE_NUMERATOR"), 500n);
 assert.equal(await read("totalSupply"), 0n);
 assert.equal(await read("publicMintActive"), false);
 assert.equal(await read("summoningStarted"), false);
 assert.equal(await read("revealed"), false);
+assert.equal(await read("supportsInterface", ["0x2a55205a"]), true);
+const [royaltyReceiver, royaltyAmount] = await read("royaltyInfo", [1n, parseEther("1")]);
+assert.equal(royaltyReceiver, accounts[0]);
+assert.equal(royaltyAmount, parseEther("0.05"));
 
 await expectRevert("mint while sealed", {
   account: accounts[1],
@@ -250,6 +255,14 @@ assert.equal(await read("owner"), accounts[0]);
 assert.equal(await read("pendingOwner"), accounts[3]);
 await write(recipient, "acceptOwnership");
 assert.equal(await read("owner"), accounts[3]);
+const [royaltyReceiverAfterOwnershipTransfer, royaltyAmountAfterOwnershipTransfer] = await read(
+  "royaltyInfo",
+  [1n, parseEther("1")]
+);
+assert.equal(royaltyReceiverAfterOwnershipTransfer, accounts[0]);
+assert.equal(royaltyAmountAfterOwnershipTransfer, parseEther("0.05"));
 
-console.log("VesselNFT RC tests passed: lifecycle, limits, sold-out, reveal, withdrawal, ownership.");
+console.log(
+  "VesselNFT RC tests passed: lifecycle, limits, sold-out, reveal, withdrawal, ownership, fixed 5% ERC2981 royalty."
+);
 await provider.disconnect();
