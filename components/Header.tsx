@@ -15,7 +15,7 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header>
+    <header style={{ zIndex: 50 }}>
       <a href="#top" className="wordmark" onClick={() => setMenuOpen(false)}>
         NULL RITE
       </a>
