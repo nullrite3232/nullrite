@@ -138,31 +138,31 @@ export default function Home() {
                 <h2>The sequence begins<br />before the Gate.</h2>
               </div>
               <p>
-                NULL RITE separates token launch, Summoning, Reveal and Gate
+                NULL RITE separates Summoning, Reveal, $RITE utility and Gate
                 progression so every state becomes a chapter rather than a single mint event.
               </p>
             </div>
             <div className="flow">
               <div className="step">
-                <div className="n">01 / RITE</div>
-                <h3>$RITE Awakens</h3>
-                <p>
-                  $RITE precedes Public Summoning and becomes ritual fuel for
-                  eligibility, Offerings, decisions and specialized Gate access.
-                </p>
-              </div>
-              <div className="step">
-                <div className="n">02 / SUMMON</div>
+                <div className="n">01 / SUMMON</div>
                 <h3>3232 Answer</h3>
                 <p>
                   Vessels are summoned through NULL RITE using ETH. Their born forms remain sealed.
                 </p>
               </div>
               <div className="step">
-                <div className="n">03 / REVEAL</div>
+                <div className="n">02 / REVEAL</div>
                 <h3>The Forms Surface</h3>
                 <p>
-                  Each Vessel reveals its born artwork, traits and rarity through the verifiable Reveal process.
+                  Each Vessel exposes its born artwork, traits and rarity through the onchain Reveal state.
+                </p>
+              </div>
+              <div className="step">
+                <div className="n">03 / RITE</div>
+                <h3>$RITE Awakens</h3>
+                <p>
+                  $RITE is the means to act across later ritual interactions,
+                  Offerings, decisions and specialized Gate access.
                 </p>
               </div>
               <div className="step">
