@@ -4,8 +4,8 @@ import { RUNTIME } from "@/lib/runtime";
 const PUBLIC_SUPPLY = 3232;
 
 // NULL RITE — centralized production site configuration.
-// Mainnet runtime is fixed to Robinhood Chain; the contract address is supplied
-// only after the audited mainnet deployment is complete.
+// Mainnet runtime is fixed to Robinhood Chain. These mint values mirror the
+// deployed mainnet constructor as UI fallbacks; live contract reads remain authoritative.
 export const SITE = {
   name: "NULL RITE",
   domain: "nullrite.xyz",
@@ -17,10 +17,10 @@ export const SITE = {
   publicPhase: "PRE_LAUNCH",
   publicSummoningEnabled: false,
   maxMintPerWallet: 10,
-  maxPerTx: 5,
+  maxPerTx: 10,
   mintCurrency: "ETH",
-  mintPriceEth: 0.0001,
-  mintPriceLocked: false,
+  mintPriceEth: 0.0005,
+  mintPriceLocked: true,
   contractAddress: RUNTIME.contractAddress,
   contractConfigured: RUNTIME.contractConfigured,
 } as const;
