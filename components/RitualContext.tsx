@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from "react";
 import { RitualOverlay } from "@/components/RitualOverlay";
 import { SummoningPreviewOverlay } from "@/components/SummoningPreviewOverlay";
+import { SITE } from "@/lib/siteConfig";
 import { useProtocolPhase } from "@/lib/useProtocolPhase";
 
 type RitualCtxValue = { open: () => void };
@@ -38,7 +39,15 @@ export function RitualProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(() => ({ open }), [open]);
   const close = () => setIsOpen(false);
-  const useLiveSummoning = phase.summoningStarted || phase.publicMintActive;
+
+  // Once production Summoning has been intentionally enabled, never regress
+  // the user-facing overlay to the pre-launch preview solely because a public
+  // RPC read was temporarily unavailable. The live RitualOverlay remains
+  // fail-closed and verifies contract state before it can submit a mint.
+  const useLiveSummoning =
+    SITE.publicSummoningEnabled ||
+    phase.summoningStarted ||
+    phase.publicMintActive;
 
   return (
     <RitualCtx.Provider value={value}>
