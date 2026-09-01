@@ -14,8 +14,11 @@ export const SITE = {
   testnetChainId: RH_TESTNET_CHAIN.id,
   runtimeNetwork: RUNTIME.network,
   supply: PUBLIC_SUPPLY,
-  publicPhase: "PRE_LAUNCH",
-  publicSummoningEnabled: false,
+  publicPhase: "SUMMONING",
+  // Onchain Summoning has been activated. This flag is only a production UI
+  // fallback so a transient RPC read cannot regress the overlay to PRE_LAUNCH.
+  // RitualOverlay still performs live contract checks before any mint write.
+  publicSummoningEnabled: true,
   maxMintPerWallet: 10,
   maxPerTx: 10,
   mintCurrency: "ETH",
@@ -26,7 +29,7 @@ export const SITE = {
 } as const;
 
 export const STATE = {
-  summoning: "SEALED",
+  summoning: "OPEN",
   reveal: "SEALED",
   gate: "SEALED",
   rite: "DORMANT",
