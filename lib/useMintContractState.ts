@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { parseEther } from "viem";
-import { usePublicClient, useReadContracts } from "wagmi";
+import { usePublicClient, useReadContract } from "wagmi";
 import { RUNTIME } from "@/lib/runtime";
 import { SITE } from "@/lib/siteConfig";
 
@@ -92,68 +92,99 @@ export function useMintContractState({
   const contractAddress = RUNTIME.contractAddress;
   const publicClient = usePublicClient({ chainId: RUNTIME.chain.id });
 
-  const reads = useReadContracts({
-    allowFailure: false,
-    contracts: [
-      {
-        address: contractAddress,
-        abi: VESSEL_MINT_ABI,
-        functionName: "mintPrice",
-        chainId: RUNTIME.chain.id,
-      },
-      {
-        address: contractAddress,
-        abi: VESSEL_MINT_ABI,
-        functionName: "maxPerTx",
-        chainId: RUNTIME.chain.id,
-      },
-      {
-        address: contractAddress,
-        abi: VESSEL_MINT_ABI,
-        functionName: "maxPerWallet",
-        chainId: RUNTIME.chain.id,
-      },
-      {
-        address: contractAddress,
-        abi: VESSEL_MINT_ABI,
-        functionName: "publicMintActive",
-        chainId: RUNTIME.chain.id,
-      },
-      {
-        address: contractAddress,
-        abi: VESSEL_MINT_ABI,
-        functionName: "summoningStarted",
-        chainId: RUNTIME.chain.id,
-      },
-      {
-        address: contractAddress,
-        abi: VESSEL_MINT_ABI,
-        functionName: "revealed",
-        chainId: RUNTIME.chain.id,
-      },
-    ],
-    query: {
-      enabled: RUNTIME.contractConfigured && enabled,
-      refetchInterval: 8_000,
-    },
+  // Keep production mint reads independent. Robinhood's public RPC has shown
+  // intermittent issues with batched/multicall reads; one failed non-critical
+  // read must not seal the entire mint UI.
+  const readQuery = {
+    enabled: RUNTIME.contractConfigured && enabled,
+    refetchInterval: 8_000,
+    retry: 3,
+  } as const;
+
+  const mintPriceRead = useReadContract({
+    address: contractAddress,
+    abi: VESSEL_MINT_ABI,
+    functionName: "mintPrice",
+    chainId: RUNTIME.chain.id,
+    query: readQuery,
   });
 
-  const results = reads.data as
-    | readonly [bigint, bigint, bigint, boolean, boolean, boolean]
-    | undefined;
+  const maxPerTxRead = useReadContract({
+    address: contractAddress,
+    abi: VESSEL_MINT_ABI,
+    functionName: "maxPerTx",
+    chainId: RUNTIME.chain.id,
+    query: readQuery,
+  });
 
-  const contractStateSynced = Boolean(results) && !reads.error;
-  const mintPriceWei = results?.[0] ?? parseEther(SITE.mintPriceEth.toString());
-  const maxPerTx = Math.max(1, Number(results?.[1] ?? BigInt(SITE.maxPerTx)));
+  const maxPerWalletRead = useReadContract({
+    address: contractAddress,
+    abi: VESSEL_MINT_ABI,
+    functionName: "maxPerWallet",
+    chainId: RUNTIME.chain.id,
+    query: readQuery,
+  });
+
+  const publicMintActiveRead = useReadContract({
+    address: contractAddress,
+    abi: VESSEL_MINT_ABI,
+    functionName: "publicMintActive",
+    chainId: RUNTIME.chain.id,
+    query: readQuery,
+  });
+
+  const summoningStartedRead = useReadContract({
+    address: contractAddress,
+    abi: VESSEL_MINT_ABI,
+    functionName: "summoningStarted",
+    chainId: RUNTIME.chain.id,
+    query: readQuery,
+  });
+
+  const revealedRead = useReadContract({
+    address: contractAddress,
+    abi: VESSEL_MINT_ABI,
+    functionName: "revealed",
+    chainId: RUNTIME.chain.id,
+    query: readQuery,
+  });
+
+  const hasMintPrice = typeof mintPriceRead.data === "bigint";
+  const hasMaxPerTx = typeof maxPerTxRead.data === "bigint";
+  const hasMaxPerWallet = typeof maxPerWalletRead.data === "bigint";
+  const hasPublicMintActive = typeof publicMintActiveRead.data === "boolean";
+  const hasRevealed = typeof revealedRead.data === "boolean";
+
+  // Only mint-critical reads gate transaction readiness. summoningStarted is a
+  // phase/display signal and must not block a valid open mint if that one read
+  // temporarily fails.
+  const contractStateSynced =
+    hasMintPrice &&
+    hasMaxPerTx &&
+    hasMaxPerWallet &&
+    hasPublicMintActive &&
+    hasRevealed;
+
+  const mintPriceWei =
+    mintPriceRead.data ?? parseEther(SITE.mintPriceEth.toString());
+  const maxPerTx = Math.max(
+    1,
+    Number(maxPerTxRead.data ?? BigInt(SITE.maxPerTx))
+  );
   const maxPerWallet = Math.max(
     1,
-    Number(results?.[2] ?? BigInt(SITE.maxMintPerWallet))
+    Number(maxPerWalletRead.data ?? BigInt(SITE.maxMintPerWallet))
   );
 
-  // Unknown contract state is always treated as sealed.
-  const publicMintActive = contractStateSynced ? Boolean(results?.[3]) : false;
-  const summoningStarted = contractStateSynced ? Boolean(results?.[4]) : false;
-  const revealed = contractStateSynced ? Boolean(results?.[5]) : false;
+  // Unknown mint-critical contract state remains fail-closed for transactions.
+  const publicMintActive = contractStateSynced
+    ? Boolean(publicMintActiveRead.data)
+    : false;
+  const summoningStarted =
+    typeof summoningStartedRead.data === "boolean"
+      ? summoningStartedRead.data
+      : SITE.publicSummoningEnabled;
+  const revealed = contractStateSynced ? Boolean(revealedRead.data) : false;
 
   const probeCeiling = useMemo(() => {
     if (!publicMintActive) return 0;
@@ -252,6 +283,21 @@ export function useMintContractState({
     publicMintActive,
   ]);
 
+  const readErrors = [
+    mintPriceRead.error,
+    maxPerTxRead.error,
+    maxPerWalletRead.error,
+    publicMintActiveRead.error,
+    revealedRead.error,
+  ].filter(Boolean);
+
+  const isContractStateLoading =
+    mintPriceRead.isLoading ||
+    maxPerTxRead.isLoading ||
+    maxPerWalletRead.isLoading ||
+    publicMintActiveRead.isLoading ||
+    revealedRead.isLoading;
+
   return {
     mintPriceWei,
     maxPerTx,
@@ -260,8 +306,8 @@ export function useMintContractState({
     summoningStarted,
     revealed,
     contractStateSynced,
-    isContractStateLoading: reads.isLoading,
-    contractStateError: reads.error,
+    isContractStateLoading,
+    contractStateError: readErrors[0] ?? null,
     walletAllowance,
     isAllowanceLoading,
     allowanceCheckError,
