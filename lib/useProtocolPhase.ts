@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { useReadContract } from "wagmi";
 import { RUNTIME } from "@/lib/runtime";
 import { SITE } from "@/lib/siteConfig";
@@ -149,14 +150,23 @@ export function useProtocolPhase() {
     summoningStartedRead.isLoading ||
     revealedRead.isLoading;
 
-  const refetch = async () => {
+  // Keep this function identity stable. RitualOverlay intentionally resets its
+  // local quantity only when the overlay opens; an unstable refetch callback
+  // would otherwise retrigger that effect on every quantity render and snap
+  // the selector back to 1.
+  const refetch = useCallback(async () => {
     await Promise.all([
       totalSupplyRead.refetch(),
       publicMintActiveRead.refetch(),
       summoningStartedRead.refetch(),
       revealedRead.refetch(),
     ]);
-  };
+  }, [
+    totalSupplyRead.refetch,
+    publicMintActiveRead.refetch,
+    summoningStartedRead.refetch,
+    revealedRead.refetch,
+  ]);
 
   return {
     minted,
