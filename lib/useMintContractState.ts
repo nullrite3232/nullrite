@@ -155,15 +155,22 @@ export function useMintContractState({
   const hasPublicMintActive = typeof publicMintActiveRead.data === "boolean";
   const hasRevealed = typeof revealedRead.data === "boolean";
 
-  // Only mint-critical reads gate transaction readiness. summoningStarted is a
-  // phase/display signal and must not block a valid open mint if that one read
-  // temporarily fails.
-  const contractStateSynced =
+  // The live RPC snapshot is preferred whenever available.
+  const liveContractStateSynced =
     hasMintPrice &&
     hasMaxPerTx &&
     hasMaxPerWallet &&
     hasPublicMintActive &&
     hasRevealed;
+
+  // Summoning has already been activated onchain and the mint price/limits are
+  // locked by the contract once summoningStarted is true. SITE values therefore
+  // form a safe production snapshot while the public RPC is unavailable. The
+  // actual mint transaction is still enforced by the deployed contract.
+  const usingProductionFallback =
+    SITE.publicSummoningEnabled && !liveContractStateSynced;
+  const contractStateSynced =
+    liveContractStateSynced || SITE.publicSummoningEnabled;
 
   const mintPriceWei =
     mintPriceRead.data ?? parseEther(SITE.mintPriceEth.toString());
@@ -176,15 +183,14 @@ export function useMintContractState({
     Number(maxPerWalletRead.data ?? BigInt(SITE.maxMintPerWallet))
   );
 
-  // Unknown mint-critical contract state remains fail-closed for transactions.
-  const publicMintActive = contractStateSynced
+  const publicMintActive = liveContractStateSynced
     ? Boolean(publicMintActiveRead.data)
-    : false;
+    : SITE.publicSummoningEnabled;
   const summoningStarted =
     typeof summoningStartedRead.data === "boolean"
       ? summoningStartedRead.data
       : SITE.publicSummoningEnabled;
-  const revealed = contractStateSynced ? Boolean(revealedRead.data) : false;
+  const revealed = liveContractStateSynced ? Boolean(revealedRead.data) : false;
 
   const probeCeiling = useMemo(() => {
     if (!publicMintActive) return 0;
@@ -204,10 +210,22 @@ export function useMintContractState({
       return;
     }
 
-    if (!RUNTIME.contractConfigured || !contractStateSynced || !publicMintActive) {
+    if (!RUNTIME.contractConfigured || !publicMintActive) {
       setWalletAllowance(null);
       setIsAllowanceLoading(false);
       setAllowanceCheckError(null);
+      return;
+    }
+
+    // Do not freeze the quantity controls waiting for a public-RPC allowance
+    // simulation. When the production snapshot is in use, the contract remains
+    // the final authority and will reject a wallet that exceeds its limit.
+    if (usingProductionFallback) {
+      setWalletAllowance(null);
+      setIsAllowanceLoading(false);
+      setAllowanceCheckError(
+        "Live wallet allowance is temporarily unavailable. The contract will verify the transaction."
+      );
       return;
     }
 
@@ -275,12 +293,12 @@ export function useMintContractState({
   }, [
     address,
     contractAddress,
-    contractStateSynced,
     enabled,
     mintPriceWei,
     probeCeiling,
     publicClient,
     publicMintActive,
+    usingProductionFallback,
   ]);
 
   const readErrors = [
@@ -291,12 +309,17 @@ export function useMintContractState({
     revealedRead.error,
   ].filter(Boolean);
 
-  const isContractStateLoading =
+  const liveReadsLoading =
     mintPriceRead.isLoading ||
     maxPerTxRead.isLoading ||
     maxPerWalletRead.isLoading ||
     publicMintActiveRead.isLoading ||
     revealedRead.isLoading;
+
+  // Once production has been intentionally activated, public RPC loading is
+  // informational only and must not disable the actual mint controls.
+  const isContractStateLoading =
+    liveReadsLoading && !SITE.publicSummoningEnabled;
 
   return {
     mintPriceWei,
@@ -306,6 +329,8 @@ export function useMintContractState({
     summoningStarted,
     revealed,
     contractStateSynced,
+    liveContractStateSynced,
+    usingProductionFallback,
     isContractStateLoading,
     contractStateError: readErrors[0] ?? null,
     walletAllowance,
