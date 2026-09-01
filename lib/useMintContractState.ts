@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { parseEther } from "viem";
-import { usePublicClient, useReadContract } from "wagmi";
+import { parseEther, zeroAddress } from "viem";
+import { useReadContract } from "wagmi";
 import { RUNTIME } from "@/lib/runtime";
 import { SITE } from "@/lib/siteConfig";
 
@@ -37,6 +36,13 @@ export const VESSEL_MINT_ABI = [
   },
   {
     type: "function",
+    name: "mintedByWallet",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
     name: "publicMintActive",
     stateMutability: "view",
     inputs: [],
@@ -60,41 +66,19 @@ export const VESSEL_MINT_ABI = [
 
 type Address = `0x${string}`;
 
-function looksLikeTransportFailure(error: unknown) {
-  const message =
-    error instanceof Error
-      ? `${error.name} ${error.message}`.toLowerCase()
-      : String(error).toLowerCase();
-
-  return [
-    "http request failed",
-    "network",
-    "timeout",
-    "timed out",
-    "fetch failed",
-    "connection",
-    "rate limit",
-    "429",
-    "502",
-    "503",
-  ].some((needle) => message.includes(needle));
-}
-
 export function useMintContractState({
   address,
   enabled,
-  remaining,
+  remaining: _remaining,
 }: {
   address?: Address;
   enabled: boolean;
   remaining: number | null;
 }) {
   const contractAddress = RUNTIME.contractAddress;
-  const publicClient = usePublicClient({ chainId: RUNTIME.chain.id });
 
-  // Keep production mint reads independent. Robinhood's public RPC has shown
-  // intermittent issues with batched/multicall reads; one failed non-critical
-  // read must not seal the entire mint UI.
+  // Keep production reads independent. One failed non-critical read must not
+  // seal the entire mint UI.
   const readQuery = {
     enabled: RUNTIME.contractConfigured && enabled,
     refetchInterval: 8_000,
@@ -155,7 +139,6 @@ export function useMintContractState({
   const hasPublicMintActive = typeof publicMintActiveRead.data === "boolean";
   const hasRevealed = typeof revealedRead.data === "boolean";
 
-  // The live RPC snapshot is preferred whenever available.
   const liveContractStateSynced =
     hasMintPrice &&
     hasMaxPerTx &&
@@ -163,10 +146,10 @@ export function useMintContractState({
     hasPublicMintActive &&
     hasRevealed;
 
-  // Summoning has already been activated onchain and the mint price/limits are
-  // locked by the contract once summoningStarted is true. SITE values therefore
-  // form a safe production snapshot while the public RPC is unavailable. The
-  // actual mint transaction is still enforced by the deployed contract.
+  // Summoning has already been activated onchain and these configuration
+  // values are locked by the contract once summoning starts. SITE values are a
+  // safe display/control fallback if a provider read temporarily fails. The
+  // contract remains the final authority for every mint transaction.
   const usingProductionFallback =
     SITE.publicSummoningEnabled && !liveContractStateSynced;
   const contractStateSynced =
@@ -192,114 +175,45 @@ export function useMintContractState({
       : SITE.publicSummoningEnabled;
   const revealed = liveContractStateSynced ? Boolean(revealedRead.data) : false;
 
-  const probeCeiling = useMemo(() => {
-    if (!publicMintActive) return 0;
-    if (remaining === null) return maxPerTx;
-    return Math.max(0, Math.min(maxPerTx, remaining));
-  }, [maxPerTx, publicMintActive, remaining]);
+  // Read the contract's public mintedByWallet mapping directly instead of
+  // simulating mint(10), mint(9), ... mint(1). The old simulation loop could
+  // leave the UI stuck on CHECKING even though the wallet was valid. This is a
+  // single lightweight eth_call and gives the exact remaining lifetime limit.
+  const walletMintedRead = useReadContract({
+    address: contractAddress,
+    abi: VESSEL_MINT_ABI,
+    functionName: "mintedByWallet",
+    args: [address ?? zeroAddress],
+    chainId: RUNTIME.chain.id,
+    query: {
+      enabled:
+        RUNTIME.contractConfigured &&
+        enabled &&
+        Boolean(address) &&
+        publicMintActive,
+      refetchInterval: 8_000,
+      retry: 2,
+    },
+  });
 
-  const [walletAllowance, setWalletAllowance] = useState<number | null>(null);
-  const [isAllowanceLoading, setIsAllowanceLoading] = useState(false);
-  const [allowanceCheckError, setAllowanceCheckError] = useState<string | null>(null);
+  const walletMinted =
+    typeof walletMintedRead.data === "bigint"
+      ? Number(walletMintedRead.data)
+      : null;
 
-  useEffect(() => {
-    if (!enabled || !address) {
-      setWalletAllowance(null);
-      setIsAllowanceLoading(false);
-      setAllowanceCheckError(null);
-      return;
-    }
+  const walletAllowance = !address
+    ? null
+    : walletMinted === null
+      ? null
+      : Math.max(0, maxPerWallet - walletMinted);
 
-    if (!RUNTIME.contractConfigured || !publicMintActive) {
-      setWalletAllowance(null);
-      setIsAllowanceLoading(false);
-      setAllowanceCheckError(null);
-      return;
-    }
+  const isAllowanceLoading = Boolean(
+    address && publicMintActive && walletMintedRead.isLoading
+  );
 
-    // Do not freeze the quantity controls waiting for a public-RPC allowance
-    // simulation. When the production snapshot is in use, the contract remains
-    // the final authority and will reject a wallet that exceeds its limit.
-    if (usingProductionFallback) {
-      setWalletAllowance(null);
-      setIsAllowanceLoading(false);
-      setAllowanceCheckError(
-        "Live wallet allowance is temporarily unavailable. The contract will verify the transaction."
-      );
-      return;
-    }
-
-    if (probeCeiling === 0) {
-      setWalletAllowance(0);
-      setIsAllowanceLoading(false);
-      setAllowanceCheckError(null);
-      return;
-    }
-
-    if (!publicClient) {
-      setWalletAllowance(null);
-      setIsAllowanceLoading(false);
-      setAllowanceCheckError("Wallet allowance could not be checked.");
-      return;
-    }
-
-    let cancelled = false;
-
-    const probeAllowance = async () => {
-      setIsAllowanceLoading(true);
-      setAllowanceCheckError(null);
-
-      for (let candidate = probeCeiling; candidate >= 1; candidate -= 1) {
-        try {
-          await publicClient.simulateContract({
-            address: contractAddress,
-            abi: VESSEL_MINT_ABI,
-            functionName: "mint",
-            args: [BigInt(candidate)],
-            account: address,
-            value: mintPriceWei * BigInt(candidate),
-          });
-
-          if (!cancelled) {
-            setWalletAllowance(candidate);
-            setIsAllowanceLoading(false);
-          }
-          return;
-        } catch (error) {
-          if (looksLikeTransportFailure(error)) {
-            if (!cancelled) {
-              setWalletAllowance(null);
-              setAllowanceCheckError(
-                "Live wallet allowance is temporarily unavailable. The contract will still verify the transaction."
-              );
-              setIsAllowanceLoading(false);
-            }
-            return;
-          }
-        }
-      }
-
-      if (!cancelled) {
-        setWalletAllowance(0);
-        setIsAllowanceLoading(false);
-      }
-    };
-
-    void probeAllowance();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    address,
-    contractAddress,
-    enabled,
-    mintPriceWei,
-    probeCeiling,
-    publicClient,
-    publicMintActive,
-    usingProductionFallback,
-  ]);
+  const allowanceCheckError = walletMintedRead.error
+    ? "Live wallet allowance is temporarily unavailable. The contract will verify the transaction."
+    : null;
 
   const readErrors = [
     mintPriceRead.error,
@@ -316,8 +230,8 @@ export function useMintContractState({
     publicMintActiveRead.isLoading ||
     revealedRead.isLoading;
 
-  // Once production has been intentionally activated, public RPC loading is
-  // informational only and must not disable the actual mint controls.
+  // Once production has intentionally been activated, provider loading is
+  // informational only and must not disable the mint controls.
   const isContractStateLoading =
     liveReadsLoading && !SITE.publicSummoningEnabled;
 
