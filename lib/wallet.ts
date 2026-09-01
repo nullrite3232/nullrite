@@ -1,7 +1,7 @@
 import { createConfig } from "wagmi";
 import { createConnector, injected } from "@wagmi/core";
-import { defineChain, getAddress, http, numberToHex } from "viem";
-import { RH_CHAIN } from "@/lib/chain";
+import { defineChain, fallback, getAddress, http, numberToHex } from "viem";
+import { RH_CHAIN, RH_DAPP_RPC_URLS } from "@/lib/chain";
 import { RUNTIME } from "@/lib/runtime";
 
 const legacyProjectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID?.trim() ?? "";
@@ -42,6 +42,9 @@ function createWalletConnectConnector(projectId: string) {
         projectId,
         metadata: walletMetadata,
         optionalChains: [robinhoodChain.id],
+        // Keep WalletConnect on Robinhood's official RPC. The Alchemy endpoint
+        // is restricted to nullrite.xyz browser origins and should not be
+        // installed into third-party wallets.
         rpcMap: {
           [robinhoodChain.id]: robinhoodChain.rpcUrls.default.http[0],
         },
@@ -169,11 +172,18 @@ if (walletConnectConfigured) {
   connectors.push(createWalletConnectConnector(walletProjectId));
 }
 
+// Production browser reads use the configured provider first and always retain
+// Robinhood's official public RPC as a fallback. This does not change the
+// network RPC stored inside collector wallets.
+const robinhoodReadTransport = fallback(
+  RH_DAPP_RPC_URLS.map((url) => http(url))
+);
+
 export const wagmiConfig = createConfig({
   chains: [robinhoodChain],
   connectors,
   transports: {
-    [RH_CHAIN.id]: http(RH_CHAIN.rpcUrls.default.http[0]),
+    [RH_CHAIN.id]: robinhoodReadTransport,
   },
   multiInjectedProviderDiscovery: true,
   ssr: true,
